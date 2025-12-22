@@ -11,21 +11,16 @@ import {
   FileUp,
   RotateCcw
 } from 'lucide-react';
+import PageHeader from '../../components/ui/PageHeader';
 
 export default function GuidePage() {
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-right-4 duration-700 max-w-4xl mx-auto pb-20">
-      <div className="flex items-center gap-4 border-b border-gray-800 pb-8">
-        <div className="p-4 bg-blue-600/10 border border-blue-600/20 rounded-3xl">
-          <HelpCircle className="text-blue-400" size={32} />
-        </div>
-        <div>
-          <h2 className="text-4xl font-black text-white tracking-tight">프로그램 사용 가이드</h2>
-          <p className="text-gray-500 font-bold uppercase text-xs tracking-widest mt-1">
-            Sales Management System User Manual
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="프로그램 사용 가이드"
+        description="Sales Management System User Manual"
+        icon={HelpCircle}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <section className="bg-gray-900/50 border border-gray-800 p-8 rounded-[40px] space-y-4 hover:border-blue-500/30 transition-all group">

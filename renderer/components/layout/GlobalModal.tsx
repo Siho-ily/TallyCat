@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { AlertCircle, CheckCircle2, HelpCircle, X } from 'lucide-react';
-import { useData } from '../context/DataContext';
+import { AlertCircle, HelpCircle } from 'lucide-react';
+import { useData } from '../../context/DataContext';
 
 export default function GlobalModal() {
   const { modalConfig } = useData();

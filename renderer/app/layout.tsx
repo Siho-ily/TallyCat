@@ -1,6 +1,6 @@
 import React from 'react';
 import '../styles/globals.css';
-import Layout from '../components/Layout';
+import Layout from '../components/layout/Layout';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 import { DataProvider } from '../context/DataContext';
-import GlobalModal from '../components/GlobalModal';
+import GlobalModal from '../components/layout/GlobalModal';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

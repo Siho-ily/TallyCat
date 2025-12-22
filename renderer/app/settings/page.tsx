@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 
 import { useData } from '../../context/DataContext';
+import PageHeader from '../../components/ui/PageHeader';
 
 export default function SettingsPage() {
   const { categories, settings, loading, refreshData, showAlert, showConfirm } = useData();
@@ -125,12 +126,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
-      <div className="flex items-center gap-3">
-        <div className="p-3 bg-blue-600/10 border border-blue-600/20 rounded-2xl">
-          <SettingsIcon className="text-blue-400" size={24} />
-        </div>
-        <h2 className="text-3xl font-black text-white">시스템 설정</h2>
-      </div>
+      <PageHeader title="시스템 설정" icon={SettingsIcon} />
 
       <div className="space-y-8">
         {/* Backup & Safety Section - Full Width */}
