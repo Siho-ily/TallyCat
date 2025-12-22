@@ -3,12 +3,19 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ReceiptText, Settings, Database, HelpCircle } from 'lucide-react';
+import {
+  LayoutDashboard,
+  ReceiptText,
+  Settings,
+  Database,
+  HelpCircle,
+  RefreshCw
+} from 'lucide-react';
 import { useData } from '../../context/DataContext';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { storage, settings } = useData();
+  const { storage, settings, refreshData, loading } = useData();
 
   const navItems = [
     { name: '대시보드', href: '/home', icon: LayoutDashboard },
@@ -60,11 +67,29 @@ export default function Sidebar() {
         <div className="bg-gray-950/50 rounded-2xl p-4 border border-gray-800/50 space-y-5">
           {/* 1. Source DB Info */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Database size={12} className="text-blue-500" />
-              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                Source DB (원본)
-              </span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Database size={12} className="text-blue-500" />
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                  Source DB (원본)
+                </span>
+              </div>
+              <button
+                onClick={() =>
+                  (window as any).refreshing
+                    ? null
+                    : (async () => {
+                        (window as any).refreshing = true;
+                        await (refreshData as any)();
+                        (window as any).refreshing = false;
+                      })()
+                }
+                className={`text-gray-600 hover:text-blue-400 transition-colors p-1 -m-1 rounded-full hover:bg-gray-800 ${
+                  loading ? 'animate-spin opacity-50' : ''
+                }`}
+                title="데이터 새로고침">
+                <RefreshCw size={10} />
+              </button>
             </div>
             <p className="text-[16px] font-black text-white">
               {((storage?.dbSize || 0) / 1024 / 1024).toFixed(2)}{' '}
@@ -78,25 +103,28 @@ export default function Sidebar() {
               <div className="flex items-center gap-1.5">
                 <div
                   className={`w-1.5 h-1.5 rounded-full ${
-                    (storage as any)?.mainPathExists ? 'bg-blue-500' : 'bg-rose-500'
+                    storage?.mainPathExists ? 'bg-blue-500' : 'bg-rose-500'
                   }`}
                 />
                 <span className="text-gray-400">Main Policy</span>
               </div>
               <span className="text-gray-600">
-                Limit: {settings?.main_max_backup_size_gb || 1.0}GB
+                Limit: {((settings?.main_max_backup_size_mb || 500) / 1024).toFixed(1)}GB
               </span>
             </div>
             <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-1000 ease-out ${
-                  storage?.limitReached ? 'bg-rose-500' : 'bg-blue-500'
+                  (storage?.mainTotalSize || 0) >
+                  (settings?.main_max_backup_size_mb || 500) * 1024 * 1024
+                    ? 'bg-rose-500'
+                    : 'bg-blue-500'
                 }`}
                 style={{
                   width: `${Math.min(
                     100,
-                    ((storage?.dbSize || 0) /
-                      ((settings?.main_max_backup_size_gb || 1.0) * 1024 * 1024 * 1024)) *
+                    ((storage?.mainTotalSize || 0) /
+                      ((settings?.main_max_backup_size_mb || 500) * 1024 * 1024)) *
                       100
                   )}%`
                 }}
@@ -110,23 +138,28 @@ export default function Sidebar() {
               <div className="flex items-center gap-1.5">
                 <div
                   className={`w-1.5 h-1.5 rounded-full ${
-                    (storage as any)?.subPathExists ? 'bg-emerald-500' : 'bg-rose-500'
+                    storage?.subPathExists ? 'bg-emerald-500' : 'bg-rose-500'
                   }`}
                 />
                 <span className="text-gray-400">Sub Policy</span>
               </div>
               <span className="text-gray-600">
-                Limit: {settings?.sub_max_backup_size_gb || 1.0}GB
+                Limit: {((settings?.sub_max_backup_size_mb || 1000) / 1024).toFixed(1)}GB
               </span>
             </div>
             <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-emerald-500 transition-all duration-1000 ease-out"
+                className={`h-full transition-all duration-1000 ease-out ${
+                  (storage?.subTotalSize || 0) >
+                  (settings?.sub_max_backup_size_mb || 1000) * 1024 * 1024
+                    ? 'bg-rose-500'
+                    : 'bg-emerald-500'
+                }`}
                 style={{
                   width: `${Math.min(
                     100,
-                    ((storage?.dbSize || 0) /
-                      ((settings?.sub_max_backup_size_gb || 1.0) * 1024 * 1024 * 1024)) *
+                    ((storage?.subTotalSize || 0) /
+                      ((settings?.sub_max_backup_size_mb || 1000) * 1024 * 1024)) *
                       100
                   )}%`
                 }}

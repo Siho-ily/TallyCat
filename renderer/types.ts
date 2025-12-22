@@ -34,4 +34,8 @@ export interface StorageInfo {
   dbSize: number;
   freeSpace: number;
   limitReached: boolean;
+  mainTotalSize: number;
+  subTotalSize: number;
+  mainPathExists: boolean;
+  subPathExists: boolean;
 }

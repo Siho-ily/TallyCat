@@ -92,7 +92,7 @@ export default function GuidePage() {
               <p className="text-sm text-gray-400 leading-relaxed">
                 설정에서 백업 경로를 지정해두면, PC 내부와 외부 저장소(USB 등) 두 곳에 주기적으로
                 데이터를 자동 백업합니다. 컴퓨터 고장 시에도 데이터를 안전하게 복구할 수 있도록{' '}
-                <strong className="text-white">실시간 감시</strong>를 켜두는 것을 권장합니다.
+                <strong className="text-white">자동 백업</strong>을 켜두는 것을 권장합니다.
               </p>
             </Card>
             <Card

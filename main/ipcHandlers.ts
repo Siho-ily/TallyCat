@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import fs from 'fs-extra';
 import path from 'path';
 import * as XLSX from 'xlsx';
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
 import crypto from 'crypto';
 
 // Helper for standardized error logging and response
@@ -139,8 +139,29 @@ export function registerIpcHandlers() {
   ipcMain.handle('get-settings', () =>
     handleIpc('get-settings', async () => {
       const db = await getDb();
-      await db.read(); // Migration is now handled centrally in db.ts
+      await db.read();
       return db.data?.settings || defaultData.settings;
+    })
+  );
+
+  ipcMain.handle('reset-data', () =>
+    handleIpc('reset-data', async () => {
+      const db = await getDb();
+      await db.read();
+      if (!db.data) return false;
+      db.data.records = [];
+      await db.write();
+      return true;
+    })
+  );
+
+  ipcMain.handle('reset-system', () =>
+    handleIpc('reset-system', async () => {
+      const db = await getDb();
+      // Use clean deep copy for full reset
+      db.data = JSON.parse(JSON.stringify({ ...defaultData, records: [] }));
+      await db.write();
+      return true;
     })
   );
 
@@ -166,38 +187,77 @@ export function registerIpcHandlers() {
       dbSize = stats.size; // bytes
     }
 
-    // Disk space check using PowerShell on Windows
+    // Disk space check using PowerShell on Windows (Non-blocking)
     let freeSpace = -1;
     try {
       const drive = path.parse(userDataPath).root.replace('\\', '');
-      const output = execSync(`powershell "Get-PSDrive ${drive} | Select-Object Free"`, {
-        encoding: 'utf8'
-      });
-      const match = output.match(/\d+/);
-      if (match) freeSpace = parseInt(match[0]);
+      const getFreeSpace = () => {
+        return new Promise<number>((resolve, reject) => {
+          // Set a 3-second timeout for the powershell command
+          const child = exec(
+            `powershell "Get-PSDrive ${drive} | Select-Object Free"`,
+            { timeout: 3000 },
+            (error, stdout) => {
+              if (error) {
+                reject(error);
+                return;
+              }
+              const match = stdout.match(/\d+/);
+              if (match) resolve(parseInt(match[0]));
+              else reject(new Error('Format error'));
+            }
+          );
+        });
+      };
+      freeSpace = await getFreeSpace();
     } catch (e) {
-      console.error('Disk space check failed', e);
+      console.warn('Disk space check timed out or failed:', e);
     }
 
     const db = await getDb();
     const settings = db.data.settings;
-    const maxMB = settings.main_max_backup_size_mb || 500;
 
-    const mainPathExists = settings.main_backup_path
-      ? await fs.pathExists(settings.main_backup_path)
-      : false;
-    const subPathExists = settings.sub_backup_path
-      ? await fs.pathExists(settings.sub_backup_path)
-      : false;
+    const mainPath = settings.main_backup_path;
+    const subPath = settings.sub_backup_path;
+
+    const getFolderSize = async (dirPath: string): Promise<number> => {
+      if (!dirPath || !(await fs.pathExists(dirPath))) return 0;
+      try {
+        const entries = await fs.readdir(dirPath, { withFileTypes: true });
+        let total = 0;
+        for (const entry of entries) {
+          const fullPath = path.join(dirPath, entry.name);
+          if (entry.isDirectory()) {
+            total += await getFolderSize(fullPath);
+          } else if (entry.isFile()) {
+            const stats = await fs.stat(fullPath);
+            total += stats.size;
+          }
+        }
+        return total;
+      } catch (e) {
+        console.error(`Error calculating folder size for ${dirPath}:`, e);
+        return 0;
+      }
+    };
+
+    const mainTotalSize = await getFolderSize(mainPath);
+    const subTotalSize = await getFolderSize(subPath);
+
+    const maxMB = settings.main_max_backup_size_mb || 500;
+    const mainPathExists = mainPath ? await fs.pathExists(mainPath) : false;
+    const subPathExists = subPath ? await fs.pathExists(subPath) : false;
 
     return {
       dbSize, // bytes
       freeSpace, // bytes
-      limitReached: dbSize > maxMB * 1024 * 1024,
+      mainTotalSize,
+      subTotalSize,
+      limitReached: mainTotalSize > maxMB * 1024 * 1024,
       mainPathExists,
       subPathExists,
-      mainBackupPath: settings.main_backup_path,
-      subBackupPath: settings.sub_backup_path
+      mainBackupPath: mainPath,
+      subBackupPath: subPath
     };
   });
 
@@ -225,7 +285,7 @@ export function registerIpcHandlers() {
           날짜: record.date,
           유형: record.type === 'income' ? '매출' : '매입',
           카테고리: category ? category.name : '기타',
-          금액: record.amount,
+          금액: record.amount, // Numeric value
           메모: record.note || ''
         };
       });
@@ -330,10 +390,17 @@ export function registerIpcHandlers() {
           const date = new Date((rawDate - 25569) * 86400 * 1000);
           dateStr = DateTime.fromJSDate(date).toFormat('yyyy-MM-dd HH:mm:ss');
         } else if (rawDate) {
+          let s = String(rawDate).trim().replace(/\./g, '-'); // . 을 - 로 치환하여 범용성 확보
+
+          // Try various formats
           const dt =
-            DateTime.fromFormat(String(rawDate), 'yyyy-MM-dd') ||
-            DateTime.fromFormat(String(rawDate), 'yyyy/MM/dd') ||
-            DateTime.fromISO(String(rawDate));
+            DateTime.fromFormat(s, 'yyyy-MM-dd HH:mm:ss') ||
+            DateTime.fromFormat(s, 'yyyy-MM-dd HH:mm') ||
+            DateTime.fromFormat(s, 'yyyy-MM-dd') ||
+            DateTime.fromFormat(s, 'MM/dd/yyyy HH:mm:ss') ||
+            DateTime.fromFormat(s, 'MM/dd/yyyy') ||
+            DateTime.fromISO(s);
+
           dateStr = dt.isValid
             ? dt.toFormat('yyyy-MM-dd HH:mm:ss')
             : DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss');
@@ -351,14 +418,28 @@ export function registerIpcHandlers() {
           typeStr.includes('out')
         ) {
           type = 'expense';
+        } else if (
+          typeStr.includes('수입') ||
+          typeStr.includes('매출') ||
+          typeStr.includes('income') ||
+          typeStr.includes('in')
+        ) {
+          type = 'income';
         }
 
         // 4. Category Matching/Creation
-        let category = categories.find(c => c.name === String(catName) && c.type === type);
+        let catNameClean = String(catName).trim();
+        let category = categories.find(c => c.name === catNameClean && c.type === type);
+
+        // If not found, try to find in inactive categories too
+        if (!category) {
+          category = categories.find(c => c.name === catNameClean && c.type === type);
+        }
+
         if (!category) {
           category = {
             id: crypto.randomUUID(),
-            name: String(catName),
+            name: catNameClean,
             type: type,
             is_active: true
           };

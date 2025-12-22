@@ -6,6 +6,9 @@ import { DateTime } from 'luxon';
 
 export async function runBackupService() {
   const db = await getDb();
+  await db.read(); // Ensure we have the latest settings and backup dates from disk
+
+  if (!db.data || !db.data.settings) return;
   const settings = db.data.settings;
 
   if (!settings.auto_backup) return;
@@ -19,25 +22,33 @@ export async function runBackupService() {
   let shouldMain = false;
 
   if (settings.main_backup_mode === 'monthly') {
-    // Check if it's one of the target days and not already backed up today
-    shouldMain =
-      settings.main_backup_interval.includes(now.day) &&
-      (!lastMain || lastMain.hasSame(now, 'day') === false);
+    // Check if it's one of the target days OR it's the last day of month and some target days are "late"
+    const isTargetDay = settings.main_backup_interval.includes(now.day);
+    const isLastDay = now.day === now.daysInMonth;
+    const hasLateDays = settings.main_backup_interval.some(d => d > now.daysInMonth);
+
+    const isBackupTime = isTargetDay || (isLastDay && hasLateDays);
+    const alreadyDoneToday = lastMain && lastMain.hasSame(now, 'day');
+    shouldMain = isBackupTime && !alreadyDoneToday;
   } else {
-    // Interval mode (use first element)
+    // Interval mode
     const interval = settings.main_backup_interval[0] || 7;
-    shouldMain = !lastMain || now.diff(lastMain, 'days').days >= interval;
+    if (!lastMain) {
+      shouldMain = true;
+    } else {
+      const diffInDays = now.diff(lastMain, 'days').days;
+      shouldMain = diffInDays >= interval;
+    }
   }
 
   if (shouldMain && settings.main_backup_path) {
-    console.log(
-      `Running main automatic backup (${
-        settings.main_backup_mode
-      }: ${settings.main_backup_interval.join(',')})...`
-    );
-    await performBackup(settings.main_backup_path, 'main');
-    settings.last_main_backup_date = now.toISO();
-    await db.write();
+    console.log(`[Backup] Running main backup (${settings.main_backup_mode})...`);
+    const success = await performBackup(settings.main_backup_path, 'main');
+    if (success) {
+      settings.last_main_backup_date = now.toISO();
+      await db.write();
+      console.log(`[Backup] Main backup date updated: ${settings.last_main_backup_date}`);
+    }
   }
 
   // 2. Check Sub Backup
@@ -47,19 +58,31 @@ export async function runBackupService() {
   let shouldSub = false;
 
   if (settings.sub_backup_mode === 'monthly') {
-    shouldSub =
-      settings.sub_backup_interval.includes(now.day) &&
-      (!lastSub || lastSub.hasSame(now, 'day') === false);
+    const isTargetDay = settings.sub_backup_interval.includes(now.day);
+    const isLastDay = now.day === now.daysInMonth;
+    const hasLateDays = settings.sub_backup_interval.some(d => d > now.daysInMonth);
+
+    const isBackupTime = isTargetDay || (isLastDay && hasLateDays);
+    const alreadyDoneToday = lastSub && lastSub.hasSame(now, 'day');
+    shouldSub = isBackupTime && !alreadyDoneToday;
   } else {
     const interval = settings.sub_backup_interval[0] || 30;
-    shouldSub = !lastSub || now.diff(lastSub, 'days').days >= interval;
+    if (!lastSub) {
+      shouldSub = true;
+    } else {
+      const diffInDays = now.diff(lastSub, 'days').days;
+      shouldSub = diffInDays >= interval;
+    }
   }
 
   if (shouldSub && settings.sub_backup_path) {
-    console.log(`Running sub automatic backup (${settings.sub_backup_mode})...`);
-    await performBackup(settings.sub_backup_path, 'sub');
-    settings.last_sub_backup_date = now.toISO();
-    await db.write();
+    console.log(`[Backup] Running sub backup (${settings.sub_backup_mode})...`);
+    const success = await performBackup(settings.sub_backup_path, 'sub');
+    if (success) {
+      settings.last_sub_backup_date = now.toISO();
+      await db.write();
+      console.log(`[Backup] Sub backup date updated: ${settings.last_sub_backup_date}`);
+    }
   }
 
   // 3. Run individual cleanups
@@ -67,14 +90,14 @@ export async function runBackupService() {
   await runCleanupService('sub', settings.sub_backup_path, settings.sub_auto_delete_months);
 }
 
-async function performBackup(targetPath: string, label: string) {
-  if (!targetPath) return;
+async function performBackup(targetPath: string, label: string): Promise<boolean> {
+  if (!targetPath) return false;
 
   try {
     const userDataPath = app.getPath('userData');
     const sourceDb = path.join(userDataPath, 'db.json');
 
-    if (!(await fs.pathExists(sourceDb))) return;
+    if (!(await fs.pathExists(sourceDb))) return false;
 
     const timestamp = DateTime.now().toFormat('yyyyMMdd_HHmmss');
     const fileName = `db_backup_${label}_${timestamp}.json`;
@@ -83,8 +106,10 @@ async function performBackup(targetPath: string, label: string) {
     await fs.ensureDir(targetPath);
     await fs.copy(sourceDb, fullDestPath);
     console.log(`Backup successful: ${fullDestPath}`);
+    return true;
   } catch (error) {
     console.error(`Backup to ${label} failed:`, error);
+    return false;
   }
 }
 

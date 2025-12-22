@@ -59,12 +59,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  desc?: string;
   prefixIcon?: React.ReactNode;
   suffix?: React.ReactNode;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, prefixIcon, suffix, className = '', ...props }, ref) => {
+  ({ label, error, desc, prefixIcon, suffix, className = '', ...props }, ref) => {
     const internalRef = React.useRef<HTMLInputElement>(null);
     React.useImperativeHandle(ref, () => internalRef.current!);
 
@@ -124,6 +125,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
+        {desc && !error && (
+          <p className="text-[10px] font-medium text-gray-600 pl-1 leading-relaxed">{desc}</p>
+        )}
         {error && <p className="text-[10px] font-bold text-rose-500 pl-1">{error}</p>}
       </div>
     );

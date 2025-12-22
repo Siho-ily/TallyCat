@@ -85,21 +85,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const refreshData = useCallback(async () => {
     try {
-      // Parallel fetching for performance
-      const [r, c, s, st] = await Promise.all([
+      // 1. Fetch core data first to unblock UI
+      const [r, c, s] = await Promise.all([
         (window as any).ipc.invoke('get-records'),
         (window as any).ipc.invoke('get-categories'),
-        (window as any).ipc.invoke('get-settings'),
-        (window as any).ipc.invoke('check-storage')
+        (window as any).ipc.invoke('get-settings')
       ]);
 
       setRecords(r);
       setCategories(c);
       setSettings(s);
-      setStorage(st);
+      setLoading(false);
+
+      // 2. Fetch storage info in background (can be slow due to file system traversal)
+      try {
+        const st = await (window as any).ipc.invoke('check-storage');
+        setStorage(st);
+      } catch (storageError) {
+        console.warn('Background storage check failed:', storageError);
+      }
     } catch (error) {
-      console.error('Failed to refresh global data:', error);
-    } finally {
+      console.error('Failed to refresh core global data:', error);
       setLoading(false);
     }
   }, []);

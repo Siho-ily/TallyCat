@@ -77,7 +77,7 @@ async function migrate(db: Low<Data>) {
   // Initialize missing top-level keys
   if (!db.data.records) db.data.records = [];
   if (!db.data.categories || db.data.categories.length === 0) {
-    db.data.categories = [...defaultData.categories];
+    db.data.categories = JSON.parse(JSON.stringify(defaultData.categories));
   } else {
     // Migration: Add is_active to existing categories
     db.data.categories = db.data.categories.map(c => ({
@@ -86,7 +86,7 @@ async function migrate(db: Low<Data>) {
     }));
   }
   if (!db.data.settings) {
-    db.data.settings = { ...defaultData.settings };
+    db.data.settings = JSON.parse(JSON.stringify(defaultData.settings));
   } else {
     // Detailed settings migration
     const s = db.data.settings as any;
@@ -130,15 +130,18 @@ async function migrate(db: Low<Data>) {
     // Default Paths (Migration for older versions)
     const docsPath = app.getPath('documents');
     const defaultBase = path.join(docsPath, 'HairShop_Backups');
-    if (!db.data.settings.main_backup_path) {
+
+    // Ensure paths are independent and not empty strings
+    if (!db.data.settings.main_backup_path || db.data.settings.main_backup_path.trim() === '') {
       db.data.settings.main_backup_path = path.join(defaultBase, 'Main');
     }
-    if (!db.data.settings.sub_backup_path) {
+
+    if (!db.data.settings.sub_backup_path || db.data.settings.sub_backup_path.trim() === '') {
       db.data.settings.sub_backup_path = path.join(defaultBase, 'Sub');
     }
 
     // Final Merge to ensure all keys from defaultData.settings exist
-    db.data.settings = { ...defaultData.settings, ...db.data.settings };
+    db.data.settings = { ...JSON.parse(JSON.stringify(defaultData.settings)), ...db.data.settings };
   }
 
   await db.write();
@@ -160,10 +163,15 @@ export async function getDb(): Promise<Low<Data>> {
       const adapter = new JSONFile<Data>(dbPath);
       const db = new Low<Data>(adapter);
 
-      await db.read();
+      try {
+        await db.read();
+      } catch (e) {
+        console.error('Core DB file corrupted, resetting to default:', e);
+        db.data = null; // Force reset
+      }
 
       if (db.data === null) {
-        db.data = { ...defaultData };
+        db.data = JSON.parse(JSON.stringify(defaultData));
         await db.write();
       } else {
         // Run migrations on existing data
