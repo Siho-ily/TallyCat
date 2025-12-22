@@ -108,7 +108,8 @@ export function registerIpcHandlers() {
         db.data.categories.push({
           id: generateId(),
           type: category.type || 'income',
-          name: category.name || '미분류'
+          name: category.name || '미분류',
+          is_active: true
         });
       }
       await db.write();
@@ -124,9 +125,13 @@ export function registerIpcHandlers() {
 
       if (!db.data.categories) return false;
 
-      db.data.categories = db.data.categories.filter(c => c.id !== id);
-      await db.write();
-      return true;
+      const index = db.data.categories.findIndex(c => c.id === id);
+      if (index > -1) {
+        db.data.categories[index] = { ...db.data.categories[index], is_active: false };
+        await db.write();
+        return true;
+      }
+      return false;
     })
   );
 
@@ -354,7 +359,8 @@ export function registerIpcHandlers() {
           category = {
             id: crypto.randomUUID(),
             name: String(catName),
-            type: type
+            type: type,
+            is_active: true
           };
           categories.push(category);
         }

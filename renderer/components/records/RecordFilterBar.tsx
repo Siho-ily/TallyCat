@@ -122,7 +122,11 @@ export default function RecordFilterBar({
               className="h-[42px] bg-gray-950 border border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[130px] text-white">
               <option value="all">전체 카테고리</option>
               {categories
-                .filter(c => filterType === 'all' || c.type === filterType)
+                .filter(
+                  c =>
+                    (filterType === 'all' || c.type === filterType) &&
+                    (c as any).is_active !== false
+                )
                 .map(cat => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}

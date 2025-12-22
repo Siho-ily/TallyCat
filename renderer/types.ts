@@ -11,6 +11,7 @@ export interface Category {
   id: string;
   type: 'income' | 'expense';
   name: string;
+  is_active: boolean;
 }
 
 export interface Settings {

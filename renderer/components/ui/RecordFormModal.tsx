@@ -147,7 +147,7 @@ export default function RecordFormModal({
               onChange={e => setFormData({ ...formData, category_id: e.target.value })}
               className="w-full bg-gray-950 border border-gray-800 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-2 focus:ring-blue-500/40 outline-none transition-all appearance-none cursor-pointer">
               {categories
-                .filter(c => c.type === formData.type)
+                .filter(c => c.type === formData.type && (c as any).is_active !== false)
                 .map(c => (
                   <option key={c.id} value={c.id}>
                     {c.name}

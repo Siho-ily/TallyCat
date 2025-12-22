@@ -16,6 +16,7 @@ export interface Category {
   id: string;
   type: 'income' | 'expense';
   name: string;
+  is_active: boolean;
 }
 
 export interface Settings {
@@ -43,14 +44,14 @@ export interface Data {
 export const defaultData: Data = {
   records: [],
   categories: [
-    { id: '1', type: 'income', name: '커트' },
-    { id: '2', type: 'income', name: '염색' },
-    { id: '3', type: 'income', name: '펌' },
-    { id: '4', type: 'expense', name: '재료비' },
-    { id: '5', type: 'expense', name: '월세' },
-    { id: '6', type: 'expense', name: '전기세' },
-    { id: '7', type: 'income', name: '기타' },
-    { id: '8', type: 'expense', name: '기타' }
+    { id: '1', type: 'income', name: '커트', is_active: true },
+    { id: '2', type: 'income', name: '염색', is_active: true },
+    { id: '3', type: 'income', name: '펌', is_active: true },
+    { id: '4', type: 'expense', name: '재료비', is_active: true },
+    { id: '5', type: 'expense', name: '월세', is_active: true },
+    { id: '6', type: 'expense', name: '전기세', is_active: true },
+    { id: '7', type: 'income', name: '기타', is_active: true },
+    { id: '8', type: 'expense', name: '기타', is_active: true }
   ],
   settings: {
     main_backup_mode: 'interval',
@@ -77,6 +78,12 @@ async function migrate(db: Low<Data>) {
   if (!db.data.records) db.data.records = [];
   if (!db.data.categories || db.data.categories.length === 0) {
     db.data.categories = [...defaultData.categories];
+  } else {
+    // Migration: Add is_active to existing categories
+    db.data.categories = db.data.categories.map(c => ({
+      ...c,
+      is_active: typeof c.is_active === 'undefined' ? true : c.is_active
+    }));
   }
   if (!db.data.settings) {
     db.data.settings = { ...defaultData.settings };

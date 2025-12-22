@@ -155,7 +155,9 @@ export default function SettingsPage() {
               <CategoryList
                 type="income"
                 title="매출 항목"
-                categories={categories.filter(c => c.type === 'income')}
+                categories={categories.filter(
+                  c => c.type === 'income' && (c as any).is_active !== false
+                )}
                 onAdd={() => handleCategoryAction('add', 'income')}
                 onDelete={(id: string) => handleCategoryAction('delete', 'income', id)}
               />
@@ -163,7 +165,9 @@ export default function SettingsPage() {
               <CategoryList
                 type="expense"
                 title="매입 항목"
-                categories={categories.filter(c => c.type === 'expense')}
+                categories={categories.filter(
+                  c => c.type === 'expense' && (c as any).is_active !== false
+                )}
                 onAdd={() => handleCategoryAction('add', 'expense')}
                 onDelete={(id: string) => handleCategoryAction('delete', 'expense', id)}
               />
