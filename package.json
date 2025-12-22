@@ -1,9 +1,10 @@
 {
   "private": true,
-  "name": "my-nextron-app",
+  "name": "spms",
+  "productName": "SPMS",
   "description": "Sales and Purchase Management System (SPMS)",
   "version": "1.0.0",
-  "author": "Yoshihide Shiono <shiono.yoshihide@gmail.com>",
+  "author": "Siho-ily <dolphin@kakao.com>",
   "main": "app/background.js",
   "scripts": {
     "dev": "nextron",
