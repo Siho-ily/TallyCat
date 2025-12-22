@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Record, Category } from '../../types';
 import {
   Plus,
@@ -21,7 +21,7 @@ import { DateTime } from 'luxon';
 import { useData } from '../../context/DataContext';
 
 export default function RecordsPage() {
-  const { records, categories, loading, refreshData } = useData();
+  const { records, categories, loading, refreshData, showAlert, showConfirm } = useData();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [currentMonth, setCurrentMonth] = useState(DateTime.now().startOf('month'));
   const [period, setPeriod] = useState<'all' | 'day' | 'week' | 'month' | 'year'>('month');
@@ -42,28 +42,49 @@ export default function RecordsPage() {
     date: '',
     note: ''
   });
+  const amountInputRef = useRef<HTMLInputElement>(null);
+
+  // Force focus when modal opens
+  useEffect(() => {
+    if (isModalOpen) {
+      window.focus();
+      const timer = setTimeout(() => {
+        amountInputRef.current?.focus();
+        // Fallback for some browsers/OS
+        if (document.activeElement !== amountInputRef.current) {
+          amountInputRef.current?.click();
+          amountInputRef.current?.focus();
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isModalOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (editingRecord) {
-        if (!confirm('내역을 수정하시겠습니까?')) return;
-        await (window as any).ipc.invoke('update-record', { ...formData, id: editingRecord.id });
+        showConfirm('내역을 수정하시겠습니까?', '수정 확인', async () => {
+          await (window as any).ipc.invoke('update-record', { ...formData, id: editingRecord.id });
+          setIsModalOpen(false);
+          await refreshData();
+        });
+        return;
       } else {
         await (window as any).ipc.invoke('add-record', formData);
       }
       setIsModalOpen(false);
-      refreshData();
+      await refreshData();
     } catch (error) {
-      alert('저장 중 오류가 발생했습니다.');
+      showAlert('저장 중 오류가 발생했습니다.', '오류');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('정말로 이 내역을 삭제하시겠습니까?')) {
+    showConfirm('정말로 이 내역을 삭제하시겠습니까?', '내역 삭제', async () => {
       await (window as any).ipc.invoke('delete-record', id);
-      refreshData();
-    }
+      await refreshData();
+    });
   };
 
   const filteredRecords = React.useMemo(() => {
@@ -217,6 +238,7 @@ export default function RecordsPage() {
         <button
           onClick={() => {
             setEditingRecord(null);
+            setSelectedRecord(null);
             setFormData({
               type: 'income',
               category_id: categories.find(c => c.type === 'income')?.id || '',
@@ -697,11 +719,12 @@ export default function RecordsPage() {
                 </button>
                 <button
                   onClick={async () => {
-                    if (confirm('정말로 이 내역을 삭제하시겠습니까?')) {
+                    showConfirm('정말로 이 내역을 삭제하시겠습니까?', '내역 삭제', async () => {
                       await (window as any).ipc.invoke('delete-record', selectedRecord.id);
                       setIsDetailModalOpen(false);
-                      refreshData();
-                    }
+                      setSelectedRecord(null);
+                      await refreshData();
+                    });
                   }}
                   className="flex-1 bg-rose-600/10 hover:bg-rose-600/20 text-rose-500 font-black py-4 rounded-2xl transition-all flex items-center justify-center gap-2 border border-rose-500/20">
                   <Trash2 size={18} /> 삭제하기
@@ -790,8 +813,10 @@ export default function RecordsPage() {
                   </label>
                   <div className="relative">
                     <input
+                      ref={amountInputRef}
                       type="number"
                       required
+                      autoFocus
                       value={formData.amount || ''}
                       onChange={e =>
                         setFormData({ ...formData, amount: parseInt(e.target.value) || 0 })

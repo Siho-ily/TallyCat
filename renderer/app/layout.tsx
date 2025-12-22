@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 };
 
 import { DataProvider } from '../context/DataContext';
+import GlobalModal from '../components/GlobalModal';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-[#050505] text-white">
         <DataProvider>
           <Layout>{children}</Layout>
+          <GlobalModal />
         </DataProvider>
       </body>
     </html>

@@ -23,7 +23,7 @@ import {
 import { useData } from '../../context/DataContext';
 
 export default function SettingsPage() {
-  const { categories, settings, loading, refreshData } = useData();
+  const { categories, settings, loading, refreshData, showAlert, showConfirm } = useData();
   const [error, setError] = useState<string | null>(null);
   const [newCatName, setNewCatName] = useState('');
   const [newCatType, setNewCatType] = useState<'income' | 'expense'>('income');
@@ -45,7 +45,7 @@ export default function SettingsPage() {
       refreshData();
     } catch (e) {
       console.error(e);
-      alert('카테고리 추가에 실패했습니다.');
+      showAlert('카테고리 추가에 실패했습니다.', '오류');
     } finally {
       setIsSubmittingCat(false);
     }
@@ -58,56 +58,58 @@ export default function SettingsPage() {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    if (confirm('이 카테고리를 삭제하시겠습니까?')) {
+    showConfirm('이 카테고리를 삭제하시겠습니까?', '카테고리 삭제', async () => {
       await (window as any).ipc.invoke('delete-category', id);
       refreshData();
-    }
+    });
   };
 
   const handleExport = async (format: 'xlsx' | 'json') => {
     try {
       const result = await (window as any).ipc.invoke('export-data', format);
-      if (result) alert('데이터를 성공적으로 내보냈습니다.');
+      if (result) showAlert('데이터를 성공적으로 내보냈습니다.', '내보내기 완료');
     } catch (error) {
       console.error('Export failed:', error);
-      alert('데이터 내보내기 중 오류가 발생했습니다.');
+      showAlert('데이터 내보내기 중 오류가 발생했습니다.', '오류');
     }
   };
 
   const handleImport = async () => {
-    const ok = confirm(
-      '데이터를 불러오면 현재 저장된 모든 내역이 사라지고 백업 파일의 내용으로 교체됩니다. 정말로 복구하시겠습니까?'
-    );
-    if (!ok) return;
-
-    try {
-      const result = await (window as any).ipc.invoke('import-data');
-      alert(result.message);
-      if (result.success) {
-        refreshData();
+    showConfirm(
+      '데이터를 불러오면 현재 저장된 모든 내역이 사라지고 백업 파일의 내용으로 교체됩니다. 정말로 복구하시겠습니까?',
+      '데이터 복구 확인',
+      async () => {
+        try {
+          const result = await (window as any).ipc.invoke('import-data');
+          showAlert(result.message, result.success ? '복구 완료' : '복구 실패');
+          if (result.success) {
+            refreshData();
+          }
+        } catch (error) {
+          console.error('Import failed:', error);
+          showAlert('데이터를 불러오는 중 오류가 발생했습니다.', '오류');
+        }
       }
-    } catch (error) {
-      console.error('Import failed:', error);
-      alert('데이터를 불러오는 중 오류가 발생했습니다.');
-    }
+    );
   };
 
   const handleImportExcel = async () => {
-    const ok = confirm(
-      '엑셀 내역을 현재 장부에 추가합니다. 날짜, 금액, 유형(수입/지출), 카테고리 컬럼이 포함된 파일이어야 합니다. 계속하시겠습니까?'
-    );
-    if (!ok) return;
-
-    try {
-      const result = await (window as any).ipc.invoke('import-excel');
-      alert(result.message);
-      if (result.success) {
-        refreshData();
+    showConfirm(
+      '엑셀 내역을 현재 장부에 추가합니다. 날짜, 금액, 유형(수입/지출), 카테고리 컬럼이 포함된 파일이어야 합니다. 계속하시겠습니까?',
+      '엑셀 가져오기 확인',
+      async () => {
+        try {
+          const result = await (window as any).ipc.invoke('import-excel');
+          showAlert(result.message, result.success ? '가져오기 완료' : '가져오기 실패');
+          if (result.success) {
+            refreshData();
+          }
+        } catch (error) {
+          console.error('Excel Import failed:', error);
+          showAlert('엑셀 데이터를 불러오는 중 오류가 발생했습니다.', '오류');
+        }
       }
-    } catch (error) {
-      console.error('Excel Import failed:', error);
-      alert('엑셀 데이터를 불러오는 중 오류가 발생했습니다.');
-    }
+    );
   };
 
   if (loading) return <div className="text-blue-400 animate-pulse">설정을 불러오는 중...</div>;
