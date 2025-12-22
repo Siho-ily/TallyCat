@@ -33,7 +33,7 @@ export default function Sidebar() {
             SPMS
           </span>
         </h1>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-widest font-bold">
+        <p className="text-xs text-gray-600 dark:text-gray-500 mt-1 uppercase tracking-widest font-bold">
           Sales & Purchase Manager
         </p>
       </div>
