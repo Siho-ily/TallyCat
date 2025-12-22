@@ -69,6 +69,65 @@ export const defaultData: Data = {
   }
 };
 
+// Migration function to handle schema changes
+async function migrate(db: Low<Data>) {
+  if (!db.data) return;
+
+  // Initialize missing top-level keys
+  if (!db.data.records) db.data.records = [];
+  if (!db.data.categories || db.data.categories.length === 0) {
+    db.data.categories = [...defaultData.categories];
+  }
+  if (!db.data.settings) {
+    db.data.settings = { ...defaultData.settings };
+  } else {
+    // Detailed settings migration
+    const s = db.data.settings as any;
+
+    // Migration: Interval conversion (number -> array)
+    if (s.backup_interval && !db.data.settings.main_backup_interval) {
+      db.data.settings.main_backup_interval = [Number(s.backup_interval)];
+      db.data.settings.sub_backup_interval = [Number(s.backup_interval)];
+    }
+
+    if (!Array.isArray(db.data.settings.main_backup_interval)) {
+      db.data.settings.main_backup_interval = [Number(db.data.settings.main_backup_interval) || 7];
+    }
+    if (!Array.isArray(db.data.settings.sub_backup_interval)) {
+      db.data.settings.sub_backup_interval = [Number(db.data.settings.sub_backup_interval) || 30];
+    }
+
+    // Migration: Date and Size fields
+    if (s.last_backup_date && !db.data.settings.last_main_backup_date) {
+      db.data.settings.last_main_backup_date = s.last_backup_date;
+      db.data.settings.last_sub_backup_date = s.last_backup_date;
+    }
+    if (s.max_backup_size_gb && !db.data.settings.main_max_backup_size_gb) {
+      db.data.settings.main_max_backup_size_gb = s.max_backup_size_gb;
+      db.data.settings.sub_max_backup_size_gb = s.max_backup_size_gb;
+    }
+    if (s.auto_delete_months && !db.data.settings.main_auto_delete_months) {
+      db.data.settings.main_auto_delete_months = s.auto_delete_months;
+      db.data.settings.sub_auto_delete_months = s.auto_delete_months;
+    }
+
+    // Default Paths (Migration for older versions)
+    const docsPath = app.getPath('documents');
+    const defaultBase = path.join(docsPath, 'HairShop_Backups');
+    if (!db.data.settings.main_backup_path) {
+      db.data.settings.main_backup_path = path.join(defaultBase, 'Main');
+    }
+    if (!db.data.settings.sub_backup_path) {
+      db.data.settings.sub_backup_path = path.join(defaultBase, 'Sub');
+    }
+
+    // Final Merge to ensure all keys from defaultData.settings exist
+    db.data.settings = { ...defaultData.settings, ...db.data.settings };
+  }
+
+  await db.write();
+}
+
 let dbInstance: Low<Data> | null = null;
 let initPromise: Promise<Low<Data>> | null = null;
 
@@ -90,9 +149,12 @@ export async function getDb(): Promise<Low<Data>> {
       if (db.data === null) {
         db.data = { ...defaultData };
         await db.write();
+      } else {
+        // Run migrations on existing data
+        await migrate(db);
       }
 
-      console.log('DB initialized successfully');
+      console.log('DB initialized and migrated successfully');
       dbInstance = db;
       return db;
     } catch (error) {

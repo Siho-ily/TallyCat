@@ -1,184 +1,195 @@
 'use client';
 
 import React from 'react';
-import { Search, X, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search as SearchIcon, ArrowLeft, ArrowRight, FileSpreadsheet } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { Category } from '../../types';
+import { Button, Input } from '../ui/InputControls';
 
 interface RecordFilterBarProps {
   viewMode: 'list' | 'calendar';
-  period: 'all' | 'day' | 'week' | 'month' | 'year';
-  setPeriod: (period: 'all' | 'day' | 'week' | 'month' | 'year') => void;
-  currentMonth: DateTime;
-  setCurrentMonth: (month: DateTime) => void;
-  typeFilter: 'all' | 'income' | 'expense';
-  setTypeFilter: (type: 'all' | 'income' | 'expense') => void;
-  categoryFilter: string;
-  setCategoryFilter: (category: string) => void;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  setViewMode: (mode: 'list' | 'calendar') => void;
+  startDate: string;
+  endDate: string;
+  setStartDate: (date: string) => void;
+  setEndDate: (date: string) => void;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  filterType: 'all' | 'income' | 'expense';
+  setFilterType: (type: 'all' | 'income' | 'expense') => void;
+  filterCategory: string;
+  setFilterCategory: (id: string) => void;
   categories: Category[];
-  handleResetFilters: () => void;
+  totalIncome: number;
+  totalExpense: number;
+  onExport: () => void;
 }
 
 export default function RecordFilterBar({
   viewMode,
-  period,
-  setPeriod,
-  currentMonth,
-  setCurrentMonth,
-  typeFilter,
-  setTypeFilter,
-  categoryFilter,
-  setCategoryFilter,
-  searchQuery,
-  setSearchQuery,
+  setViewMode,
+  startDate,
+  endDate,
+  setStartDate,
+  setEndDate,
+  searchTerm,
+  setSearchTerm,
+  filterType,
+  setFilterType,
+  filterCategory,
+  setFilterCategory,
   categories,
-  handleResetFilters
+  totalIncome,
+  totalExpense,
+  onExport
 }: RecordFilterBarProps) {
+  const moveMonth = (offset: number) => {
+    const start = DateTime.fromISO(startDate).plus({ months: offset }).startOf('month').toISODate();
+    const end = DateTime.fromISO(startDate).plus({ months: offset }).endOf('month').toISODate();
+    if (start && end) {
+      setStartDate(start);
+      setEndDate(end);
+    }
+  };
+
   return (
-    <div className="bg-gray-900/50 border border-gray-800 p-4 rounded-2xl flex flex-wrap gap-4 items-center justify-between shadow-xl">
-      <div className="flex flex-wrap items-center gap-4">
-        {/* Time Filter */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">
-            시간
-          </span>
-          {viewMode === 'list' ? (
-            <div className="flex bg-gray-950 p-1 rounded-xl border border-gray-800">
-              {(['all', 'day', 'week', 'month', 'year'] as const).map(p => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    period === p
-                      ? 'bg-gray-800 text-white shadow-sm'
-                      : 'text-gray-500 hover:text-gray-300'
-                  }`}>
-                  {p === 'all'
-                    ? '전체'
-                    : p === 'day'
-                    ? '오늘'
-                    : p === 'week'
-                    ? '주간'
-                    : p === 'month'
-                    ? '월간'
-                    : '년간'}
-                </button>
-              ))}
+    <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-[40px] shadow-xl space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+      <div className="flex flex-col xl:flex-row gap-8 items-stretch xl:items-end justify-between">
+        {/* Left: View & Date Selector */}
+        <div className="flex flex-col md:flex-row gap-6 items-stretch md:items-end">
+          <div className="space-y-2">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+              보기 모드
+            </span>
+            <div className="flex p-1.5 bg-gray-950 rounded-2xl border border-gray-800">
+              <Button
+                variant={viewMode === 'list' ? 'primary' : 'ghost'}
+                size="sm"
+                className="!rounded-xl"
+                onClick={() => setViewMode('list')}>
+                목록
+              </Button>
+              <Button
+                variant={viewMode === 'calendar' ? 'primary' : 'ghost'}
+                size="sm"
+                className="!rounded-xl"
+                onClick={() => setViewMode('calendar')}>
+                달력
+              </Button>
             </div>
-          ) : (
-            <div className="flex items-center gap-4 bg-gray-950 px-4 py-1.5 rounded-xl border border-gray-800">
-              <button
-                onClick={() => setCurrentMonth(currentMonth.minus({ months: 1 }))}
-                className="text-gray-500 hover:text-white p-0.5">
-                <ChevronLeft size={16} />
-              </button>
-              <span className="text-xs font-black text-white min-w-[80px] text-center">
-                {currentMonth.toFormat('yyyy년 L월')}
-              </span>
-              <button
-                onClick={() => setCurrentMonth(currentMonth.plus({ months: 1 }))}
-                className="text-gray-500 hover:text-white p-0.5">
-                <ChevronRight size={16} />
-              </button>
-              <button
-                onClick={() => setCurrentMonth(DateTime.now().startOf('month'))}
-                className="ml-2 text-[10px] font-black uppercase text-blue-400 hover:text-blue-300 transition-colors">
-                Today
-              </button>
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+              조회 기간
+            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 bg-gray-950 p-1.5 rounded-2xl border border-gray-800">
+                <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveMonth(-1)}>
+                  <ArrowLeft size={16} />
+                </Button>
+                <div className="flex items-center gap-2 px-3">
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    className="!bg-transparent !border-none !p-0 !min-w-[120px] !text-xs !ring-0"
+                  />
+                  <span className="text-gray-700 font-bold">~</span>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    className="!bg-transparent !border-none !p-0 !min-w-[120px] !text-xs !ring-0"
+                  />
+                </div>
+                <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveMonth(1)}>
+                  <ArrowRight size={16} />
+                </Button>
+              </div>
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="h-6 w-px bg-gray-800 mx-1 hidden lg:block" />
+        {/* Right: Search & Filters */}
+        <div className="flex flex-col md:flex-row gap-6 items-stretch md:items-end flex-1 xl:max-w-3xl">
+          <div className="flex-1 space-y-2">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+              검색 정렬
+            </span>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <Input
+                  placeholder="메모 내용으로 검색..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  prefixIcon={<SearchIcon size={18} />}
+                />
+              </div>
+              <div className="flex gap-2">
+                <select
+                  value={filterType}
+                  onChange={e => setFilterType(e.target.value as any)}
+                  className="bg-gray-950 border border-gray-800 text-xs font-bold rounded-2xl px-5 py-3.5 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer">
+                  <option value="all">모든 유형</option>
+                  <option value="income">매출만</option>
+                  <option value="expense">매입만</option>
+                </select>
+                <select
+                  value={filterCategory}
+                  onChange={e => setFilterCategory(e.target.value)}
+                  className="bg-gray-950 border border-gray-800 text-xs font-bold rounded-2xl px-5 py-3.5 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[120px]">
+                  <option value="all">모든 카테고리</option>
+                  {categories
+                    .filter(c => filterType === 'all' || c.type === filterType)
+                    .map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+          </div>
 
-        {/* Type Filter */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-            유형
-          </span>
-          <select
-            value={typeFilter}
-            onChange={e => {
-              setTypeFilter(e.target.value as any);
-              setCategoryFilter('all');
-            }}
-            className="bg-gray-950 border border-gray-800 text-gray-300 text-xs font-bold rounded-xl px-4 py-2 outline-none hover:border-gray-700 transition-all cursor-pointer">
-            <option value="all">모든 유형</option>
-            <option value="income">매출 (Income)</option>
-            <option value="expense">매입 (Expense)</option>
-          </select>
-        </div>
-
-        {/* Category Filter */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-            카테고리
-          </span>
-          <select
-            value={categoryFilter}
-            onChange={e => setCategoryFilter(e.target.value)}
-            className="bg-gray-950 border border-gray-800 text-gray-300 text-xs font-bold rounded-xl px-4 py-2 outline-none hover:border-gray-700 transition-all cursor-pointer min-w-[120px]">
-            <option value="all">전체 카테고리</option>
-            {categories
-              .filter(c => typeFilter === 'all' || c.type === typeFilter)
-              .map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-          </select>
+          <Button variant="secondary" onClick={onExport} icon={<FileSpreadsheet size={18} />}>
+            내보내기
+          </Button>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative group min-w-[240px]">
-        <Search
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-blue-400 transition-colors"
-          size={16}
-        />
-        <input
-          type="text"
-          placeholder="내역 검색 (메모, 금액...)"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-11 pr-4 py-2 text-xs font-medium text-white placeholder-gray-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40 transition-all"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white">
-            <X size={14} />
-          </button>
-        )}
+      {/* Summary Stats */}
+      <div className="flex flex-wrap items-center gap-10 pt-8 border-t border-gray-800/50">
+        <StatItem label="선택 기간 매출" value={totalIncome} color="emerald" />
+        <StatItem label="선택 기간 매입" value={totalExpense} color="rose" />
+        <StatItem label="선택 기간 순익" value={totalIncome - totalExpense} color="blue" />
       </div>
+    </div>
+  );
+}
 
-      {/* Calendar View Legend */}
-      {viewMode === 'calendar' && (
-        <div className="flex items-center gap-6 pr-4">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-              Income
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-rose-500" />
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-              Expense
-            </span>
-          </div>
-        </div>
-      )}
+function StatItem({
+  label,
+  value,
+  color
+}: {
+  label: string;
+  value: number;
+  color: 'emerald' | 'rose' | 'blue';
+}) {
+  const colorMap = {
+    emerald: 'text-emerald-400',
+    rose: 'text-rose-400',
+    blue: 'text-blue-400'
+  };
 
-      <button
-        onClick={handleResetFilters}
-        className="flex items-center gap-2 px-4 py-2 text-xs font-black text-gray-500 hover:text-white bg-gray-950 border border-gray-800 hover:border-gray-700 rounded-xl transition-all group"
-        title="필터 초기화">
-        <RotateCcw size={14} className="group-hover:rotate-[-45deg] transition-transform" />
-        <span>초기화</span>
-      </button>
+  return (
+    <div className="space-y-1">
+      <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">{label}</p>
+      <p className={`text-2xl font-black ${colorMap[color]}`}>
+        {value >= 0 ? '+' : ''}
+        {value.toLocaleString()}원
+      </p>
     </div>
   );
 }
