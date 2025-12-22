@@ -13,7 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
-  Search
+  Search,
+  RotateCcw
 } from 'lucide-react';
 import { DateTime } from 'luxon';
 
@@ -27,6 +28,9 @@ export default function RecordsPage() {
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
@@ -120,6 +124,31 @@ export default function RecordsPage() {
     categories
   ]);
 
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [typeFilter, categoryFilter, searchQuery, period, viewMode, currentMonth]);
+
+  const paginatedRecords = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredRecords.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredRecords, currentPage]);
+
+  const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
+
+  const totals = React.useMemo(() => {
+    return filteredRecords.reduce(
+      (acc, record) => {
+        if (record.type === 'income') acc.income += record.amount;
+        else acc.expense += record.amount;
+        return acc;
+      },
+      { income: 0, expense: 0 }
+    );
+  }, [filteredRecords]);
+
+  const netProfit = totals.income - totals.expense;
+
   // Calendar Logic
   const calendarDays = React.useMemo(() => {
     const firstDay = currentMonth.startOf('month');
@@ -147,6 +176,15 @@ export default function RecordsPage() {
     }
     return days;
   }, [currentMonth, records]);
+
+  const handleResetFilters = () => {
+    setPeriod('month');
+    setTypeFilter('all');
+    setCategoryFilter('all');
+    setSearchQuery('');
+    setCurrentPage(1);
+    setCurrentMonth(DateTime.now().startOf('month'));
+  };
 
   if (loading) return <div className="text-blue-400 animate-pulse">데이터를 불러오는 중...</div>;
 
@@ -327,6 +365,14 @@ export default function RecordsPage() {
             </div>
           </div>
         )}
+
+        <button
+          onClick={handleResetFilters}
+          className="flex items-center gap-2 px-4 py-2 text-xs font-black text-gray-500 hover:text-white bg-gray-950 border border-gray-800 hover:border-gray-700 rounded-xl transition-all group"
+          title="필터 초기화">
+          <RotateCcw size={14} className="group-hover:rotate-[-45deg] transition-transform" />
+          <span>초기화</span>
+        </button>
       </div>
 
       {viewMode === 'list' ? (
@@ -341,7 +387,7 @@ export default function RecordsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {filteredRecords.map(record => (
+              {paginatedRecords.map(record => (
                 <tr
                   key={record.id}
                   onClick={() => {
@@ -390,7 +436,91 @@ export default function RecordsPage() {
                 </tr>
               )}
             </tbody>
+            {filteredRecords.length > 0 && (
+              <tfoot className="bg-gray-800/50 border-t border-gray-700">
+                <tr>
+                  <td colSpan={2} className="px-6 py-4">
+                    <div className="flex gap-6">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                          페이지 내 매출
+                        </span>
+                        <span className="text-xs font-black text-emerald-400">
+                          +
+                          {paginatedRecords
+                            .filter(r => r.type === 'income')
+                            .reduce((s, r) => s + r.amount, 0)
+                            .toLocaleString()}
+                          원
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                          페이지 내 매입
+                        </span>
+                        <span className="text-xs font-black text-rose-400">
+                          -
+                          {paginatedRecords
+                            .filter(r => r.type === 'expense')
+                            .reduce((s, r) => s + r.amount, 0)
+                            .toLocaleString()}
+                          원
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right" colSpan={2}>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                        필터링 전체 합계 (순이익)
+                      </span>
+                      <span
+                        className={`text-lg font-black ${
+                          netProfit >= 0 ? 'text-blue-400' : 'text-rose-400'
+                        }`}>
+                        {netProfit >= 0 ? '+' : ''}
+                        {netProfit.toLocaleString()}원
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              </tfoot>
+            )}
           </table>
+
+          {/* Pagination UI */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 p-6 bg-gray-950/30 border-t border-gray-800">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="p-2 text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                <ChevronLeft size={20} />
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`min-w-[32px] h-8 rounded-lg text-xs font-black transition-all ${
+                      currentPage === page
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                        : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
+                    }`}>
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-gray-900/50 border border-gray-800 rounded-[40px] overflow-hidden shadow-2xl p-8 animate-in zoom-in-95 duration-500">
