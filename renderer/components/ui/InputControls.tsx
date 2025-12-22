@@ -7,6 +7,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
   loading?: boolean;
+  fullWidth?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -17,6 +18,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       size = 'md',
       icon,
       loading,
+      fullWidth,
       children,
       disabled,
       ...props
@@ -25,6 +27,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const baseStyles =
       'inline-flex items-center justify-center font-black transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 gap-2';
+    const displayStyle = fullWidth ? 'flex w-full' : 'inline-flex';
 
     const variants = {
       primary: 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500',
@@ -43,7 +46,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || loading}
-        className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+        className={`${displayStyle} ${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
         {...props}>
         {loading ? (
           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

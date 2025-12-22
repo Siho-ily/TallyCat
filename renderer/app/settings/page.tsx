@@ -17,6 +17,7 @@ import { DateTime } from 'luxon';
 import { useData } from '../../context/DataContext';
 import PageHeader from '../../components/ui/PageHeader';
 import Card from '../../components/ui/Card';
+import BaseModal from '../../components/ui/BaseModal';
 import { Button, Input } from '../../components/ui/InputControls';
 import { Settings } from '../../types';
 
@@ -24,6 +25,7 @@ export default function SettingsPage() {
   const { categories, settings, loading, refreshData, showAlert, showConfirm, showPrompt } =
     useData();
   const [showDebug, setShowDebug] = React.useState(false);
+  const [showImportModal, setShowImportModal] = React.useState(false);
 
   const handleUpdateSettings = async (newSettings: Partial<Settings>) => {
     try {
@@ -35,11 +37,13 @@ export default function SettingsPage() {
     }
   };
 
-  const handleExport = async (format: 'xlsx' | 'json') => {
+  const handleExport = async (format: 'xlsx' | 'json'): Promise<boolean> => {
     try {
-      await (window as any).ipc.invoke('export-data', format);
+      const result = await (window as any).ipc.invoke('export-data', format);
+      return !!result;
     } catch (error) {
       showAlert('데이터 내보내기 중 오류가 발생했습니다.', '오류');
+      return false;
     }
   };
 
@@ -294,15 +298,7 @@ export default function SettingsPage() {
                     icon={<FileUp />}
                     title="엑셀 데이터 가져오기"
                     desc="기존 장부 등의 엑셀 데이터를 시스템으로 이전합니다"
-                    onClick={async () => {
-                      const result = await (window as any).ipc.invoke('import-excel');
-                      if (result.success) {
-                        showAlert(result.message, '가져오기 완료');
-                        await refreshData();
-                      } else if (result.message !== '취소되었습니다.') {
-                        showAlert(result.message, '실패');
-                      }
-                    }}
+                    onClick={() => setShowImportModal(true)}
                   />
                 </div>
               </div>
@@ -335,6 +331,60 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
+
+      {/* Excel Import Backup Guard Modal */}
+      <BaseModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        title="데이터 가져오기 전 확인"
+        icon={<Zap size={30} className="text-amber-400" />}
+        maxWidth="max-w-md"
+        footer={
+          <div className="flex flex-col w-full gap-3">
+            <Button
+              variant="primary"
+              fullWidth
+              onClick={async () => {
+                // 백업만 진행하고 모달은 닫지 않음
+                await handleExport('json');
+              }}>
+              현재 데이터 백업하기 (JSON)
+            </Button>
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={async () => {
+                  const result = await (window as any).ipc.invoke('import-excel');
+                  if (result.success) {
+                    showAlert(result.message, '가져오기 완료');
+                    await refreshData();
+                  } else if (result.message !== '취소되었습니다.') {
+                    showAlert(result.message, '실패');
+                  }
+                }}>
+                엑셀 데이터 가져오기
+              </Button>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="flex-1 px-6 py-4 rounded-3xl text-sm font-black text-gray-500 hover:text-white hover:bg-gray-800 transition-all">
+                취소
+              </button>
+            </div>
+          </div>
+        }>
+        <div className="text-center space-y-4">
+          <p className="text-gray-400 font-medium leading-relaxed">
+            엑셀 데이터를 가져오기 전에 현재 데이터를 백업하는 것을 권장합니다.
+          </p>
+          <div className="text-[11px] text-gray-500 bg-gray-950 p-4 rounded-2xl border border-gray-800/50 leading-relaxed">
+            데이터를 가져오는 과정에서 기존 데이터와 충돌하거나 예기치 못한 문제가 발생할 수
+            있습니다.
+            <br />
+            안전한 진행을 위해 백업을 먼저 수행하시겠습니까?
+          </div>
+        </div>
+      </BaseModal>
     </div>
   );
 }
