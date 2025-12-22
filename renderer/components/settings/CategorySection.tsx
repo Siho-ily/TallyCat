@@ -40,14 +40,16 @@ export function CategoryList({ title, categories, onAdd, onEdit, onDelete }: Cat
             <span className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
               {c.name}
             </span>
-            <button
-              onClick={e => {
-                e.stopPropagation();
-                onDelete(c.id);
-              }}
-              className="p-1 text-gray-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10 rounded-lg">
-              <PlusCircle size={14} className="rotate-45" />
-            </button>
+            {c.name !== '기본' && (
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  onDelete(c.id);
+                }}
+                className="p-1 text-gray-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10 rounded-lg">
+                <PlusCircle size={14} className="rotate-45" />
+              </button>
+            )}
           </div>
         ))}
         {categories.length === 0 && (

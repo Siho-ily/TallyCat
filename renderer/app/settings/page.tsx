@@ -76,10 +76,20 @@ export default function SettingsPage() {
           }
         });
       } else if (action === 'delete' && id) {
-        if (confirm('카테고리를 삭제하시겠습니까?')) {
-          const success = await (window as any).ipc.invoke('delete-category', id);
-          if (success) await refreshData();
+        const category = categories.find(c => c.id === id);
+        if (category?.name === '기본') {
+          showAlert('기본 카테고리는 삭제할 수 없습니다.', '알림');
+          return;
         }
+
+        showConfirm(
+          '정말 이 카테고리를 삭제하시겠습니까? 삭제 후에도 기존 내역에는 카테고리 정보가 유지되지만, 목록에서는 더 이상 보이지 않습니다.',
+          '카테고리 삭제 확인',
+          async () => {
+            const success = await (window as any).ipc.invoke('delete-category', id);
+            if (success) await refreshData();
+          }
+        );
       }
     } catch (error: any) {
       console.error('Category action failed:', error);
