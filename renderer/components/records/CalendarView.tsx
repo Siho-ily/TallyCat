@@ -19,7 +19,7 @@ interface CalendarViewProps {
 export default function CalendarView({ calendarDays, onDayClick }: CalendarViewProps) {
   return (
     <div className="bg-gray-900/50 border border-gray-800 rounded-[40px] overflow-hidden shadow-2xl p-8 animate-in zoom-in-95 duration-500">
-      <div className="grid grid-cols-7 gap-4">
+      <div className="grid grid-cols-7 gap-1">
         {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
           <div
             key={d}
@@ -37,7 +37,7 @@ export default function CalendarView({ calendarDays, onDayClick }: CalendarViewP
             <div
               key={idx}
               onClick={() => onDayClick(day.date.set({ hour: 12, minute: 0, second: 0 }))}
-              className={`min-h-[120px] p-4 rounded-3xl border transition-all cursor-pointer group relative flex flex-col justify-between ${
+              className={`min-h-[120px] p-2 rounded-2xl border transition-all cursor-pointer group relative flex flex-col justify-between ${
                 day.isCurrentMonth
                   ? 'bg-gray-950/50 border-gray-800/50 hover:border-blue-500/40 hover:bg-gray-900/50'
                   : 'bg-transparent border-transparent opacity-20'
