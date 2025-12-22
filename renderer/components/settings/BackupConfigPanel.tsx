@@ -4,6 +4,7 @@ import React from 'react';
 import { HardDrive } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { Button, Input } from '../ui/InputControls';
+import RetentionInputGroup from './RetentionInputGroup';
 import { Settings } from '../../types';
 
 interface BackupConfigPanelProps {
@@ -237,62 +238,21 @@ export default function BackupConfigPanel({
                 className="w-4 h-4 accent-rose-500 cursor-pointer"
               />
             </div>
-            <div
-              className={`space-y-3 transition-all ${
-                autoDeleteEnabled ? 'opacity-100' : 'opacity-30 pointer-events-none grayscale'
-              }`}>
-              <div className="flex gap-2">
-                <div className="flex-1 space-y-1">
-                  <span className="text-[8px] font-black text-gray-500 dark:text-gray-700 uppercase pl-1">
-                    년
-                  </span>
-                  <input
-                    type="number"
-                    value={localYears}
-                    onChange={e => setLocalYears(e.target.value)}
-                    onBlur={e => handleRetentionUpdate('years', e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-800 rounded-xl px-2 py-1.5 text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <span className="text-[8px] font-black text-gray-500 dark:text-gray-700 uppercase pl-1">
-                    월
-                  </span>
-                  <input
-                    type="number"
-                    value={localMonths}
-                    onChange={e => setLocalMonths(e.target.value)}
-                    onBlur={e => handleRetentionUpdate('months', e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-800 rounded-xl px-2 py-1.5 text-xs font-bold text-white outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <span className="text-[8px] font-black text-gray-500 dark:text-gray-700 uppercase pl-1">
-                    일
-                  </span>
-                  <input
-                    type="number"
-                    value={localDays}
-                    onChange={e => setLocalDays(e.target.value)}
-                    onBlur={e => handleRetentionUpdate('days', e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-800 rounded-xl px-2 py-1.5 text-xs font-bold text-white outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[8px] font-black text-gray-700 uppercase pl-1">
-                  최대 보관 개수
-                </span>
-                <input
-                  type="number"
-                  value={localCount}
-                  onChange={e => setLocalCount(e.target.value)}
-                  onBlur={e => handleRetentionUpdate('count', e.target.value)}
-                  placeholder="무제한: 0"
-                  className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-800 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
+            <RetentionInputGroup
+              years={localYears}
+              months={localMonths}
+              days={localDays}
+              count={localCount}
+              onYearsChange={setLocalYears}
+              onMonthsChange={setLocalMonths}
+              onDaysChange={setLocalDays}
+              onCountChange={setLocalCount}
+              onYearsBlur={value => handleRetentionUpdate('years', value)}
+              onMonthsBlur={value => handleRetentionUpdate('months', value)}
+              onDaysBlur={value => handleRetentionUpdate('days', value)}
+              onCountBlur={value => handleRetentionUpdate('count', value)}
+              disabled={!autoDeleteEnabled}
+            />
           </div>
         </div>
 
