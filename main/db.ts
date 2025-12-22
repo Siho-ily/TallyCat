@@ -31,16 +31,8 @@ export interface Settings {
   sub_max_backup_size_mb: number;
   main_backup_path: string;
   sub_backup_path: string;
-  main_auto_delete_enabled: boolean;
-  main_retention_years: number;
-  main_retention_months: number;
-  main_retention_days: number;
-  main_retention_count: number;
-  sub_auto_delete_enabled: boolean;
-  sub_retention_years: number;
-  sub_retention_months: number;
-  sub_retention_days: number;
-  sub_retention_count: number;
+  main_auto_delete_months: number;
+  sub_auto_delete_months: number;
 }
 
 export interface Data {
@@ -52,8 +44,8 @@ export interface Data {
 export const defaultData: Data = {
   records: [],
   categories: [
-    { id: '1', type: 'income', name: '기타', is_active: true },
-    { id: '2', type: 'expense', name: '기타', is_active: true }
+    { id: '1', type: 'income', name: '기본', is_active: true },
+    { id: '2', type: 'expense', name: '기본', is_active: true }
   ],
   settings: {
     main_backup_mode: 'interval',
@@ -63,20 +55,12 @@ export const defaultData: Data = {
     auto_backup: true,
     last_main_backup_date: null,
     last_sub_backup_date: null,
-    main_max_backup_size_mb: 100,
-    sub_max_backup_size_mb: 100,
+    main_max_backup_size_mb: 500,
+    sub_max_backup_size_mb: 1000,
     main_backup_path: '',
     sub_backup_path: '',
-    main_auto_delete_enabled: true,
-    main_retention_years: 0,
-    main_retention_months: 3,
-    main_retention_days: 0,
-    main_retention_count: 50,
-    sub_auto_delete_enabled: true,
-    sub_retention_years: 1,
-    sub_retention_months: 0,
-    sub_retention_days: 0,
-    sub_retention_count: 100
+    main_auto_delete_months: 3,
+    sub_auto_delete_months: 12
   }
 };
 
@@ -87,7 +71,7 @@ async function migrate(db: Low<Data>) {
   // Initialize missing top-level keys
   if (!db.data.records) db.data.records = [];
   if (!db.data.categories || db.data.categories.length === 0) {
-    db.data.categories = JSON.parse(JSON.stringify(defaultData.categories));
+    db.data.categories = [...defaultData.categories];
   } else {
     // Migration: Add is_active to existing categories
     db.data.categories = db.data.categories.map(c => ({
@@ -96,7 +80,7 @@ async function migrate(db: Low<Data>) {
     }));
   }
   if (!db.data.settings) {
-    db.data.settings = JSON.parse(JSON.stringify(defaultData.settings));
+    db.data.settings = { ...defaultData.settings };
   } else {
     // Detailed settings migration
     const s = db.data.settings as any;
@@ -132,34 +116,26 @@ async function migrate(db: Low<Data>) {
       s.sub_max_backup_size_mb = Math.round(s.sub_max_backup_size_gb * 1024);
       delete s.sub_max_backup_size_gb;
     }
-    // Migration for retention policy
-    if (s.auto_delete_months) {
-      db.data.settings.main_retention_months = s.auto_delete_months;
-      db.data.settings.sub_retention_months = s.auto_delete_months;
-    }
-    // Handle partial development versions if they existed
-    if ((s as any).main_auto_delete_months) {
-      db.data.settings.main_retention_months = (s as any).main_auto_delete_months;
-    }
-    if ((s as any).sub_auto_delete_months) {
-      db.data.settings.sub_retention_months = (s as any).sub_auto_delete_months;
+    if (s.auto_delete_months && !db.data.settings.main_auto_delete_months) {
+      db.data.settings.main_auto_delete_months = s.auto_delete_months;
+      db.data.settings.sub_auto_delete_months = s.auto_delete_months;
     }
 
     // Default Paths (Migration for older versions)
     const docsPath = app.getPath('documents');
-    const defaultBase = path.join(docsPath, 'SPMS');
+    const defaultBase = path.join(docsPath, 'HairShop_Backups');
 
     // Ensure paths are independent and not empty strings
     if (!db.data.settings.main_backup_path || db.data.settings.main_backup_path.trim() === '') {
-      db.data.settings.main_backup_path = path.join(defaultBase, 'main');
+      db.data.settings.main_backup_path = path.join(defaultBase, 'Main');
     }
 
     if (!db.data.settings.sub_backup_path || db.data.settings.sub_backup_path.trim() === '') {
-      db.data.settings.sub_backup_path = path.join(defaultBase, 'sub');
+      db.data.settings.sub_backup_path = path.join(defaultBase, 'Sub');
     }
 
     // Final Merge to ensure all keys from defaultData.settings exist
-    db.data.settings = { ...JSON.parse(JSON.stringify(defaultData.settings)), ...db.data.settings };
+    db.data.settings = { ...defaultData.settings, ...db.data.settings };
   }
 
   await db.write();
@@ -181,15 +157,10 @@ export async function getDb(): Promise<Low<Data>> {
       const adapter = new JSONFile<Data>(dbPath);
       const db = new Low<Data>(adapter);
 
-      try {
-        await db.read();
-      } catch (e) {
-        console.error('Core DB file corrupted, resetting to default:', e);
-        db.data = null; // Force reset
-      }
+      await db.read();
 
       if (db.data === null) {
-        db.data = JSON.parse(JSON.stringify(defaultData));
+        db.data = { ...defaultData };
         await db.write();
       } else {
         // Run migrations on existing data

@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import fs from 'fs-extra';
 import path from 'path';
 import * as XLSX from 'xlsx';
-import { exec } from 'child_process';
+import { execSync } from 'child_process';
 import crypto from 'crypto';
 
 // Helper for standardized error logging and response
@@ -158,8 +158,7 @@ export function registerIpcHandlers() {
   ipcMain.handle('reset-system', () =>
     handleIpc('reset-system', async () => {
       const db = await getDb();
-      // Use clean deep copy for full reset
-      db.data = JSON.parse(JSON.stringify({ ...defaultData, records: [] }));
+      db.data = { ...defaultData, records: [] };
       await db.write();
       return true;
     })
@@ -187,31 +186,17 @@ export function registerIpcHandlers() {
       dbSize = stats.size; // bytes
     }
 
-    // Disk space check using PowerShell on Windows (Non-blocking)
+    // Disk space check using PowerShell on Windows
     let freeSpace = -1;
     try {
       const drive = path.parse(userDataPath).root.replace('\\', '');
-      const getFreeSpace = () => {
-        return new Promise<number>((resolve, reject) => {
-          // Set a 3-second timeout for the powershell command
-          const child = exec(
-            `powershell "(Get-PSDrive ${drive[0]}).Free"`,
-            { timeout: 3000 },
-            (error, stdout) => {
-              if (error) {
-                reject(error);
-                return;
-              }
-              const match = stdout.match(/\d+/);
-              if (match) resolve(parseInt(match[0]));
-              else reject(new Error('Format error'));
-            }
-          );
-        });
-      };
-      freeSpace = await getFreeSpace();
+      const output = execSync(`powershell "Get-PSDrive ${drive} | Select-Object Free"`, {
+        encoding: 'utf8'
+      });
+      const match = output.match(/\d+/);
+      if (match) freeSpace = parseInt(match[0]);
     } catch (e) {
-      console.warn('Disk space check timed out or failed:', e);
+      console.error('Disk space check failed', e);
     }
 
     const db = await getDb();

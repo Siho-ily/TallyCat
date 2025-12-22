@@ -88,6 +88,20 @@ export default function SettingsPage() {
     }
   };
 
+  const handleRenameCategory = async (id: string, newName: string) => {
+    try {
+      const success = await (window as any).ipc.invoke('save-category', { id, name: newName });
+      if (success) {
+        await refreshData();
+      } else {
+        showAlert('카테고리 수정에 실패했습니다.', '오류');
+      }
+    } catch (error) {
+      console.error('Failed to rename category:', error);
+      showAlert('카테고리 이름 변경 중 오류가 발생했습니다.', '오류');
+    }
+  };
+
   const handleResetData = () => {
     showConfirm(
       '장부 내역만 초기화하시겠습니까? 카테고리와 시스템 설정은 유지됩니다. 이 작업은 되돌릴 수 없습니다.',
@@ -136,7 +150,11 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           {/* Left Column: Categories + Danger Zone */}
           <div className="space-y-8">
-            <CategorySection categories={categories} onAction={handleCategoryAction} />
+            <CategorySection
+              categories={categories}
+              onAction={handleCategoryAction}
+              onRename={handleRenameCategory}
+            />
             <DangerZoneSection onResetData={handleResetData} onResetSystem={handleResetSystem} />
           </div>
 

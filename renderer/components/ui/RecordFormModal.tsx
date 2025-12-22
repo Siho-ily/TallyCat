@@ -117,8 +117,7 @@ export default function RecordFormModal({
               formData.type === 'income' ? 'bg-emerald-500 hover:bg-emerald-400' : ''
             }`}
             onClick={() => {
-              const firstCat = categories.find(c => c.type === 'income')?.id || '';
-              setFormData({ ...formData, type: 'income', category_id: firstCat });
+              setFormData({ ...formData, type: 'income', category_id: '' });
             }}>
             매출
           </Button>
@@ -129,8 +128,7 @@ export default function RecordFormModal({
               formData.type === 'expense' ? 'bg-rose-500 hover:bg-rose-400' : ''
             }`}
             onClick={() => {
-              const firstCat = categories.find(c => c.type === 'expense')?.id || '';
-              setFormData({ ...formData, type: 'expense', category_id: firstCat });
+              setFormData({ ...formData, type: 'expense', category_id: '' });
             }}>
             매입
           </Button>
@@ -146,6 +144,9 @@ export default function RecordFormModal({
               value={formData.category_id}
               onChange={e => setFormData({ ...formData, category_id: e.target.value })}
               className="w-full bg-gray-950 border border-gray-800 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-2 focus:ring-blue-500/40 outline-none transition-all appearance-none cursor-pointer">
+              <option value="" disabled>
+                카테고리를 선택하세요
+              </option>
               {categories
                 .filter(c => c.type === formData.type && (c as any).is_active !== false)
                 .map(c => (
