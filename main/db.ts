@@ -129,15 +129,15 @@ async function migrate(db: Low<Data>) {
 
     // Default Paths (Migration for older versions)
     const docsPath = app.getPath('documents');
-    const defaultBase = path.join(docsPath, 'HairShop_Backups');
+    const defaultBase = path.join(docsPath, 'SPM');
 
     // Ensure paths are independent and not empty strings
     if (!db.data.settings.main_backup_path || db.data.settings.main_backup_path.trim() === '') {
-      db.data.settings.main_backup_path = path.join(defaultBase, 'Main');
+      db.data.settings.main_backup_path = path.join(defaultBase, 'main');
     }
 
     if (!db.data.settings.sub_backup_path || db.data.settings.sub_backup_path.trim() === '') {
-      db.data.settings.sub_backup_path = path.join(defaultBase, 'Sub');
+      db.data.settings.sub_backup_path = path.join(defaultBase, 'sub');
     }
 
     // Final Merge to ensure all keys from defaultData.settings exist

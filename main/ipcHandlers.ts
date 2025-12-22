@@ -195,7 +195,7 @@ export function registerIpcHandlers() {
         return new Promise<number>((resolve, reject) => {
           // Set a 3-second timeout for the powershell command
           const child = exec(
-            `powershell "Get-PSDrive ${drive} | Select-Object Free"`,
+            `powershell "(Get-PSDrive ${drive[0]}).Free"`,
             { timeout: 3000 },
             (error, stdout) => {
               if (error) {
