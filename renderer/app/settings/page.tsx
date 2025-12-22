@@ -20,43 +20,20 @@ import {
   FileUp
 } from 'lucide-react';
 
+import { useData } from '../../context/DataContext';
+
 export default function SettingsPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { categories, settings, loading, refreshData } = useData();
   const [error, setError] = useState<string | null>(null);
   const [newCatName, setNewCatName] = useState('');
   const [newCatType, setNewCatType] = useState<'income' | 'expense'>('income');
   const [isSubmittingCat, setIsSubmittingCat] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      if (!(window as any).ipc) {
-        console.warn('IPC not ready yet, retrying...');
-        setTimeout(fetchData, 100);
-        return;
-      }
-      const cats = await (window as any).ipc.invoke('get-categories');
-      const sets = await (window as any).ipc.invoke('get-settings');
-      setCategories(cats);
-      setSettings(sets);
-    } catch (e) {
-      console.error(e);
-      setError('설정 데이터를 불러오는 데 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleUpdateSettings = async (newSettings: Partial<Settings>) => {
     if (!settings) return;
     const updated = { ...settings, ...newSettings };
     await (window as any).ipc.invoke('update-settings', updated);
-    setSettings(updated);
+    refreshData();
   };
 
   const handleAddCategory = async () => {
@@ -65,7 +42,7 @@ export default function SettingsPage() {
       setIsSubmittingCat(true);
       await (window as any).ipc.invoke('save-category', { type: newCatType, name: newCatName });
       setNewCatName('');
-      await fetchData();
+      refreshData();
     } catch (e) {
       console.error(e);
       alert('카테고리 추가에 실패했습니다.');
@@ -83,7 +60,7 @@ export default function SettingsPage() {
   const handleDeleteCategory = async (id: string) => {
     if (confirm('이 카테고리를 삭제하시겠습니까?')) {
       await (window as any).ipc.invoke('delete-category', id);
-      fetchData();
+      refreshData();
     }
   };
 
@@ -107,7 +84,7 @@ export default function SettingsPage() {
       const result = await (window as any).ipc.invoke('import-data');
       alert(result.message);
       if (result.success) {
-        window.location.reload();
+        refreshData();
       }
     } catch (error) {
       console.error('Import failed:', error);
@@ -125,7 +102,7 @@ export default function SettingsPage() {
       const result = await (window as any).ipc.invoke('import-excel');
       alert(result.message);
       if (result.success) {
-        window.location.reload();
+        refreshData();
       }
     } catch (error) {
       console.error('Excel Import failed:', error);

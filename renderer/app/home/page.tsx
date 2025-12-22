@@ -19,87 +19,12 @@ import { Record, Category, Settings, StorageInfo } from '../../types';
 import { DateTime } from 'luxon';
 import Link from 'next/link';
 
+import { useData } from '../../context/DataContext';
+
 export default function HomePage() {
-  const [records, setRecords] = useState<Record[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [stats, setStats] = useState({
-    income: 0,
-    expense: 0,
-    profit: 0,
-    percentChange: 0
-  });
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [storage, setStorage] = useState<StorageInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hasCache, setHasCache] = useState(false);
+  const { records, categories, settings, storage, loading } = useData();
 
-  useEffect(() => {
-    // 1. Try to load from Cache first (Instant)
-    const loadCache = () => {
-      try {
-        const cachedRecords = localStorage.getItem('cache_records');
-        const cachedStats = localStorage.getItem('cache_stats');
-        const cachedCats = localStorage.getItem('cache_categories');
-        const cachedSets = localStorage.getItem('cache_settings');
-
-        if (cachedRecords && cachedStats && cachedCats && cachedSets) {
-          setRecords(JSON.parse(cachedRecords));
-          setStats(JSON.parse(cachedStats));
-          setCategories(JSON.parse(cachedCats));
-          setSettings(JSON.parse(cachedSets));
-          setHasCache(true);
-          setLoading(false); // Hide skeletons immediately if cache exists
-        }
-      } catch (e) {
-        console.error('Failed to load dashboard cache:', e);
-      }
-    };
-
-    const fetchCoreData = async () => {
-      try {
-        const [fetchedRecords, fetchedCategories, fetchedSettings] = await Promise.all([
-          (window as any).ipc.invoke('get-records'),
-          (window as any).ipc.invoke('get-categories'),
-          (window as any).ipc.invoke('get-settings')
-        ]);
-
-        setRecords(fetchedRecords);
-        setCategories(fetchedCategories);
-        setSettings(fetchedSettings);
-
-        // Calculate and update stats
-        const freshStats = calculateStats(fetchedRecords);
-        setStats(freshStats);
-
-        // Update Cache for next visit
-        localStorage.setItem('cache_records', JSON.stringify(fetchedRecords));
-        localStorage.setItem('cache_categories', JSON.stringify(fetchedCategories));
-        localStorage.setItem('cache_settings', JSON.stringify(fetchedSettings));
-        localStorage.setItem('cache_stats', JSON.stringify(freshStats));
-
-        setLoading(false);
-        setHasCache(true);
-      } catch (error) {
-        console.error('Failed to fetch core data:', error);
-        setLoading(false);
-      }
-    };
-
-    const fetchBackgroundData = async () => {
-      try {
-        const fetchedStorage: StorageInfo = await (window as any).ipc.invoke('check-storage');
-        setStorage(fetchedStorage);
-      } catch (error) {
-        console.error('Failed to fetch storage info:', error);
-      }
-    };
-
-    loadCache();
-    fetchCoreData();
-    fetchBackgroundData();
-  }, []);
-
-  const calculateStats = (records: Record[]) => {
+  const stats = React.useMemo(() => {
     const now = DateTime.now();
     const thisMonthRecords = records.filter(
       r =>
@@ -120,7 +45,7 @@ export default function HomePage() {
       profit: income - expense,
       percentChange: 0
     };
-  };
+  }, [records]);
 
   const chartData = React.useMemo(() => {
     const days = [];

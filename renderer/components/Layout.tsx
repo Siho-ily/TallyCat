@@ -14,30 +14,12 @@ import {
   HelpCircle,
   X
 } from 'lucide-react';
-import { StorageInfo, Settings as SettingsType } from '../types';
+import { useData } from '../context/DataContext';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [storage, setStorage] = React.useState<StorageInfo | null>(null);
-  const [settings, setSettings] = React.useState<SettingsType | null>(null);
+  const { storage, settings } = useData();
   const [showGuide, setShowGuide] = React.useState(false);
-
-  React.useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const storageInfo = await (window as any).ipc.invoke('check-storage');
-        const settingsInfo = await (window as any).ipc.invoke('get-settings');
-        setStorage(storageInfo);
-        setSettings(settingsInfo);
-      } catch (e) {
-        console.error('Failed to fetch storage info in layout', e);
-      }
-    };
-    fetchStatus();
-    // Refresh every 5 mins OR when pathname changes (sync when moving pages)
-    const timer = setInterval(fetchStatus, 5 * 60 * 1000);
-    return () => clearInterval(timer);
-  }, [pathname]); // Refresh on navigation to sync settings changes
 
   const navItems = [
     { name: '대시보드', href: '/home', icon: LayoutDashboard },

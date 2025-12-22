@@ -5,10 +5,10 @@ import { Record, Category } from '../../types';
 import { Plus, Trash2, Edit3, X, CheckCircle2 } from 'lucide-react';
 import { DateTime } from 'luxon';
 
+import { useData } from '../../context/DataContext';
+
 export default function RecordsPage() {
-  const [records, setRecords] = useState<Record[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { records, categories, loading, refreshData } = useData();
   const [period, setPeriod] = useState<'all' | 'day' | 'week' | 'month' | 'year'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,23 +21,6 @@ export default function RecordsPage() {
     note: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const fetchedRecords = await (window as any).ipc.invoke('get-records');
-      const fetchedCategories = await (window as any).ipc.invoke('get-categories');
-      setRecords(fetchedRecords);
-      setCategories(fetchedCategories);
-    } catch (error) {
-      console.error('Fetch error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -47,7 +30,7 @@ export default function RecordsPage() {
         await (window as any).ipc.invoke('add-record', formData);
       }
       setIsModalOpen(false);
-      fetchData();
+      refreshData();
     } catch (error) {
       alert('저장 중 오류가 발생했습니다.');
     }
@@ -56,7 +39,7 @@ export default function RecordsPage() {
   const handleDelete = async (id: string) => {
     if (confirm('정말로 이 내역을 삭제하시겠습니까?')) {
       await (window as any).ipc.invoke('delete-record', id);
-      fetchData();
+      refreshData();
     }
   };
 

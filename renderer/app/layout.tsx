@@ -8,11 +8,15 @@ export const metadata: Metadata = {
   description: 'Offline sales and backup management for hairshops'
 };
 
+import { DataProvider } from '../context/DataContext';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body>
-        <Layout>{children}</Layout>
+      <body className="bg-[#050505] text-white">
+        <DataProvider>
+          <Layout>{children}</Layout>
+        </DataProvider>
       </body>
     </html>
   );
