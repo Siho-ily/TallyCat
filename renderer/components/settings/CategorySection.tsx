@@ -36,8 +36,8 @@ export function CategoryList({ title, categories, onAdd, onEdit, onDelete }: Cat
           <div
             key={c.id}
             onClick={() => onEdit(c)}
-            className="flex items-center justify-center gap-1.5 bg-gray-900 border border-gray-800 px-3 py-1.5 rounded-xl group hover:border-blue-500/50 transition-all shadow-sm cursor-pointer hover:bg-gray-800">
-            <span className="text-xs font-bold text-gray-300 group-hover:text-blue-400 transition-colors">
+            className="flex items-center justify-center gap-1.5 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 px-3 py-1.5 rounded-xl group hover:border-blue-500/50 transition-all shadow-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800">
+            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 group-hover:text-blue-400 transition-colors">
               {c.name}
             </span>
             {c.name !== '기본' && (

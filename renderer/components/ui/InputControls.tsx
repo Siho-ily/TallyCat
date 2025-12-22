@@ -31,9 +31,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500',
-      secondary: 'bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700',
+      secondary:
+        'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-300 dark:hover:bg-gray-700',
       danger: 'bg-rose-600/10 text-rose-500 border border-rose-500/20 hover:bg-rose-600/20',
-      ghost: 'text-gray-500 hover:text-white hover:bg-gray-800'
+      ghost:
+        'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
     };
 
     const sizes = {
@@ -90,7 +92,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="space-y-1.5 w-full">
         {label && (
-          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+          <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest pl-1">
             {label}
           </label>
         )}
@@ -113,8 +115,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={internalRef}
             className={`
-              w-full bg-gray-950 border border-gray-800 rounded-2xl py-3.5 text-sm font-bold 
-              focus:ring-2 focus:ring-blue-500/40 outline-none transition-all placeholder-gray-800
+              w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl py-3.5 text-sm font-bold 
+              focus:ring-2 focus:ring-blue-500/40 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-800
+              text-gray-900 dark:text-white
               ${prefixIcon ? 'pl-12' : 'px-5'}
               ${suffix ? 'pr-16' : 'pr-5'}
               ${error ? 'border-rose-500/50 ring-rose-500/20' : ''}

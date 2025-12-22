@@ -18,13 +18,17 @@ interface CalendarViewProps {
 
 export default function CalendarView({ calendarDays, onDayClick }: CalendarViewProps) {
   return (
-    <div className="bg-gray-900/50 border border-gray-800 rounded-[40px] overflow-hidden shadow-2xl p-8 animate-in zoom-in-95 duration-500">
+    <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-[40px] overflow-hidden shadow-2xl p-8 animate-in zoom-in-95 duration-500">
       <div className="grid grid-cols-7 gap-1">
         {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
           <div
             key={d}
             className={`text-center text-[10px] font-black uppercase tracking-widest pb-4 ${
-              i === 0 ? 'text-rose-500' : i === 6 ? 'text-blue-500' : 'text-gray-600'
+              i === 0
+                ? 'text-rose-500'
+                : i === 6
+                ? 'text-blue-500'
+                : 'text-gray-400 dark:text-gray-600'
             }`}>
             {d}
           </div>
@@ -39,7 +43,7 @@ export default function CalendarView({ calendarDays, onDayClick }: CalendarViewP
               onClick={() => onDayClick(day.date.set({ hour: 12, minute: 0, second: 0 }))}
               className={`min-h-[120px] p-2 rounded-2xl border transition-all cursor-pointer group relative flex flex-col justify-between ${
                 day.isCurrentMonth
-                  ? 'bg-gray-950/50 border-gray-800/50 hover:border-blue-500/40 hover:bg-gray-900/50'
+                  ? 'bg-white dark:bg-gray-950/50 border-gray-200 dark:border-gray-800/50 hover:border-blue-500/40 hover:bg-gray-100 dark:hover:bg-gray-900/50'
                   : 'bg-transparent border-transparent opacity-20'
               } ${isToday ? 'ring-2 ring-blue-500/50 bg-blue-500/5 border-blue-500/20' : ''}`}>
               <div className="flex justify-between items-start">

@@ -25,7 +25,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <nav className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col shadow-xl">
+    <nav className="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shadow-xl">
       <div className="p-6">
         <h1 className="flex items-center gap-3 text-2xl font-black">
           <img src="/images/logo.png" alt="SPMS Logo" className="w-8 h-8 object-contain" />
@@ -33,7 +33,7 @@ export default function Sidebar() {
             SPMS
           </span>
         </h1>
-        <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest font-bold">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-widest font-bold">
           Sales & Purchase Manager
         </p>
       </div>
@@ -48,7 +48,7 @@ export default function Sidebar() {
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${
                 isActive
                   ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20 shadow-[0_0_20px_rgba(37,99,235,0.1)]'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
               }`}>
               <item.icon
                 size={20}
@@ -66,8 +66,8 @@ export default function Sidebar() {
       </div>
 
       {/* Sidebar Footer: Data Health & Backup Status */}
-      <div className="p-4 border-t border-gray-800 bg-gray-900/50">
-        <div className="bg-gray-950/50 rounded-2xl p-4 border border-gray-800/50 space-y-5">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-100/50 dark:bg-gray-900/50">
+        <div className="bg-white dark:bg-gray-950/50 rounded-2xl p-4 border border-gray-200 dark:border-gray-800/50 space-y-5">
           {/* 1. Source DB Info */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -94,9 +94,9 @@ export default function Sidebar() {
                 <RefreshCw size={10} />
               </button>
             </div>
-            <p className="text-[16px] font-black text-white">
+            <p className="text-[16px] font-black text-gray-900 dark:text-white">
               {((storage?.dbSize || 0) / 1024 / 1024).toFixed(2)}{' '}
-              <span className="text-[10px] text-gray-500 font-bold">MB</span>
+              <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold">MB</span>
             </p>
           </div>
 
@@ -115,7 +115,7 @@ export default function Sidebar() {
                 Limit: {((settings?.main_max_backup_size_mb || 500) / 1024).toFixed(1)}GB
               </span>
             </div>
-            <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+            <div className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-1000 ease-out ${
                   (storage?.mainTotalSize || 0) >
@@ -150,7 +150,7 @@ export default function Sidebar() {
                 Limit: {((settings?.sub_max_backup_size_mb || 1000) / 1024).toFixed(1)}GB
               </span>
             </div>
-            <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+            <div className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-1000 ease-out ${
                   (storage?.subTotalSize || 0) >

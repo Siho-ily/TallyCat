@@ -23,9 +23,11 @@ export default function PageHeader({ title, description, icon, actions }: PageHe
           </div>
         )}
         <div className="space-y-1">
-          <h1 className="text-4xl font-black text-white tracking-tighter leading-none">{title}</h1>
+          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter leading-none">
+            {title}
+          </h1>
           {description && (
-            <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.3em] pl-1">
+            <p className="text-gray-600 dark:text-gray-500 font-bold uppercase text-[10px] tracking-[0.3em] pl-1">
               {description}
             </p>
           )}

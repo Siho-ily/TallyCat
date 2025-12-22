@@ -17,8 +17,8 @@ export default function BackupSection({ settings, onUpdateSettings }: BackupSect
       title="데이터 보호 및 백업 정책"
       icon={<ShieldCheck size={24} className="text-emerald-400" />}
       actions={
-        <div className="flex items-center gap-3 bg-gray-950 px-4 py-2 rounded-2xl border border-gray-800 shadow-inner">
-          <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+        <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-950 px-4 py-2 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-inner">
+          <span className="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest">
             자동 백업 활성화
           </span>
           <input

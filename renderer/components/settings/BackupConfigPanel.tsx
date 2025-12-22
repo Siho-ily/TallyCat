@@ -141,7 +141,7 @@ export default function BackupConfigPanel({
     : '기록 없음';
 
   return (
-    <div className="space-y-6 bg-gray-950/30 p-8 rounded-3xl border border-gray-800/50 shadow-inner">
+    <div className="space-y-6 bg-gray-100 dark:bg-gray-950/30 p-8 rounded-3xl border border-gray-200 dark:border-gray-800/50 shadow-inner">
       <div className="flex justify-between items-center">
         <div className="flex flex-col gap-1">
           <span
@@ -149,7 +149,7 @@ export default function BackupConfigPanel({
             <div className={`w-2 h-2 rounded-full ${dotClass} animate-pulse`} />
             {label}
           </span>
-          <span className="text-[9px] font-bold text-gray-600 pl-4">
+          <span className="text-[9px] font-bold text-gray-500 dark:text-gray-600 pl-4">
             최근 성공: {formattedDate}
           </span>
         </div>
@@ -167,7 +167,7 @@ export default function BackupConfigPanel({
               onUpdate({ [`${prefix}_backup_mode`]: newMode });
             }
           }}
-          className="bg-gray-900 border border-gray-700 text-[10px] font-black rounded-xl px-3 py-1.5 outline-none text-gray-300">
+          className="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-[10px] font-black rounded-xl px-3 py-1.5 outline-none text-gray-900 dark:text-gray-300">
           <option value="interval">일 단위 간격</option>
           <option value="monthly">매달 특정일</option>
         </select>
@@ -227,7 +227,7 @@ export default function BackupConfigPanel({
           </div>
           <div className="space-y-4">
             <div className="flex justify-between items-center pr-2">
-              <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest pl-1">
+              <span className="text-[10px] text-gray-600 dark:text-gray-500 font-black uppercase tracking-widest pl-1">
                 자동 삭제 정책
               </span>
               <input
@@ -243,17 +243,21 @@ export default function BackupConfigPanel({
               }`}>
               <div className="flex gap-2">
                 <div className="flex-1 space-y-1">
-                  <span className="text-[8px] font-black text-gray-700 uppercase pl-1">년</span>
+                  <span className="text-[8px] font-black text-gray-500 dark:text-gray-700 uppercase pl-1">
+                    년
+                  </span>
                   <input
                     type="number"
                     value={localYears}
                     onChange={e => setLocalYears(e.target.value)}
                     onBlur={e => handleRetentionUpdate('years', e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-800 rounded-xl px-2 py-1.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-800 rounded-xl px-2 py-1.5 text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500"
                   />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <span className="text-[8px] font-black text-gray-700 uppercase pl-1">월</span>
+                  <span className="text-[8px] font-black text-gray-500 dark:text-gray-700 uppercase pl-1">
+                    월
+                  </span>
                   <input
                     type="number"
                     value={localMonths}
@@ -263,7 +267,9 @@ export default function BackupConfigPanel({
                   />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <span className="text-[8px] font-black text-gray-700 uppercase pl-1">일</span>
+                  <span className="text-[8px] font-black text-gray-500 dark:text-gray-700 uppercase pl-1">
+                    일
+                  </span>
                   <input
                     type="number"
                     value={localDays}
@@ -283,7 +289,7 @@ export default function BackupConfigPanel({
                   onChange={e => setLocalCount(e.target.value)}
                   onBlur={e => handleRetentionUpdate('count', e.target.value)}
                   placeholder="무제한: 0"
-                  className="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-1.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                  className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-800 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500"
                 />
               </div>
             </div>

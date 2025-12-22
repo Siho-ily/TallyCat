@@ -45,7 +45,7 @@ export default function StatCard({ title, value, icon, trend, color }: StatCardP
 
   return (
     <div
-      className={`p-8 rounded-[40px] border border-gray-800 bg-gray-900/50 shadow-xl transition-all hover:border-gray-700/50 hover:translate-y-[-4px] group relative overflow-hidden`}>
+      className={`p-8 rounded-[40px] border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 shadow-xl transition-all hover:border-gray-300 dark:hover:border-gray-700/50 hover:translate-y-[-4px] group relative overflow-hidden`}>
       {/* Decorative gradient */}
       <div
         className={`absolute -right-4 -top-4 w-24 h-24 blur-3xl opacity-10 group-hover:opacity-20 transition-opacity bg-current ${scheme.text}`}
@@ -58,7 +58,7 @@ export default function StatCard({ title, value, icon, trend, color }: StatCardP
         </div>
         {trend && (
           <div
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-950 border border-gray-800 shadow-sm`}>
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-sm`}>
             <span
               className={`text-[10px] font-black ${
                 trend.isUp ? 'text-emerald-500' : 'text-rose-500'
@@ -70,8 +70,10 @@ export default function StatCard({ title, value, icon, trend, color }: StatCardP
       </div>
 
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">{title}</p>
-        <p className={`text-2xl font-black text-white tracking-tight`}>
+        <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">
+          {title}
+        </p>
+        <p className={`text-2xl font-black text-gray-900 dark:text-white tracking-tight`}>
           {typeof value === 'number' ? `${value.toLocaleString()}원` : value}
         </p>
       </div>

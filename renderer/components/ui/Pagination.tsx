@@ -13,11 +13,11 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-center gap-2 p-6 bg-gray-950/30 border-t border-gray-800">
+    <div className="flex items-center justify-center gap-2 p-6 bg-gray-100 dark:bg-gray-950/30 border-t border-gray-200 dark:border-gray-800">
       <button
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="p-2 text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+        className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
         <ChevronLeft size={20} />
       </button>
 
@@ -39,7 +39,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
       <button
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="p-2 text-gray-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+        className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all">
         <ChevronRight size={20} />
       </button>
     </div>

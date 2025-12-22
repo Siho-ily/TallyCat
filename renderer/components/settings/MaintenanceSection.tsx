@@ -50,7 +50,7 @@ export default function MaintenanceSection({
             </div>
           </div>
 
-          <div className="h-px bg-gray-800/50" />
+          <div className="h-px bg-gray-200 dark:bg-gray-800/50" />
 
           {/* Import Group */}
           <div className="space-y-4">

@@ -54,9 +54,9 @@ export default function RecordFilterBar({
   };
 
   return (
-    <div className="bg-gray-900/50 border border-gray-800 p-6 rounded-[32px] shadow-xl space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+    <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-6 rounded-[32px] shadow-xl space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
       {/* 1st Row: Global Statistics (Total Cumulative) */}
-      <div className="flex flex-wrap items-center justify-between gap-6 pb-6 border-b border-gray-800/50">
+      <div className="flex flex-wrap items-center justify-between gap-6 pb-6 border-b border-gray-200 dark:border-gray-800/50">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400">
             <PieChart size={20} />
@@ -80,7 +80,7 @@ export default function RecordFilterBar({
       <div className="space-y-4">
         {/* 2nd Row: Period Controls (Horizontal) */}
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
-          <div className="flex p-1 bg-gray-950 rounded-2xl border border-gray-800 shrink-0">
+          <div className="flex p-1 bg-white dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-800 shrink-0">
             {(['day', 'week', 'month', 'year'] as const).map(p => (
               <Button
                 key={p}
@@ -93,11 +93,13 @@ export default function RecordFilterBar({
             ))}
           </div>
 
-          <div className="flex items-center gap-2 bg-gray-950 p-1.5 rounded-2xl border border-gray-800 h-[42px] flex-1 md:flex-none md:min-w-[240px] justify-between">
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-950 p-1.5 rounded-2xl border border-gray-200 dark:border-gray-800 h-[42px] flex-1 md:flex-none md:min-w-[240px] justify-between">
             <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveDate(-1)}>
               <ChevronLeft size={16} />
             </Button>
-            <span className="text-xs font-black text-white px-2">{getPeriodLabel()}</span>
+            <span className="text-xs font-black text-gray-900 dark:text-white px-2">
+              {getPeriodLabel()}
+            </span>
             <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveDate(1)}>
               <ChevronRight size={16} />
             </Button>
@@ -110,7 +112,7 @@ export default function RecordFilterBar({
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value as any)}
-              className="h-[42px] bg-gray-950 border border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer text-white min-w-[80px]">
+              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer text-gray-900 dark:text-white min-w-[80px]">
               <option value="all">전체 유형</option>
               <option value="income">매출</option>
               <option value="expense">매입</option>
@@ -119,7 +121,7 @@ export default function RecordFilterBar({
             <select
               value={filterCategory}
               onChange={e => setFilterCategory(e.target.value)}
-              className="h-[42px] bg-gray-950 border border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[130px] text-white">
+              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[130px] text-gray-900 dark:text-white">
               <option value="all">전체 카테고리</option>
               {categories
                 .filter(

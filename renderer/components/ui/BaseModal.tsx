@@ -36,17 +36,21 @@ export default function BaseModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
       <div
-        className={`bg-gray-900 border border-gray-800 w-full ${maxWidth} rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col`}
+        className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full ${maxWidth} rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col`}
         onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="p-8 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
+        <div className="p-8 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
           <div className="flex items-center gap-3">
-            {icon && <div className="p-2.5 bg-blue-500/10 rounded-2xl text-blue-400">{icon}</div>}
-            <h3 className="text-xl font-black text-white">{title}</h3>
+            {icon && (
+              <div className="p-2.5 bg-blue-500/10 rounded-2xl text-blue-500 dark:text-blue-400">
+                {icon}
+              </div>
+            )}
+            <h3 className="text-xl font-black text-gray-900 dark:text-white">{title}</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-xl transition-colors text-gray-500 hover:text-white">
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white">
             <X size={20} />
           </button>
         </div>

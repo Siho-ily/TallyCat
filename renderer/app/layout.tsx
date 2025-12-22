@@ -9,16 +9,19 @@ export const metadata: Metadata = {
 };
 
 import { DataProvider } from '../context/DataContext';
+import { ThemeProvider } from '../context/ThemeContext';
 import GlobalModal from '../components/layout/GlobalModal';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body className="bg-[#050505] text-white">
-        <DataProvider>
-          <Layout>{children}</Layout>
-          <GlobalModal />
-        </DataProvider>
+      <body>
+        <ThemeProvider>
+          <DataProvider>
+            <Layout>{children}</Layout>
+            <GlobalModal />
+          </DataProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

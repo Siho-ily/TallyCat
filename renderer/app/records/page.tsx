@@ -151,7 +151,7 @@ export default function RecordsPage() {
         description={`${currentDate.toFormat('yyyy년 MM월')} 매장 거래 내역입니다.`}
         actions={
           <>
-            <div className="flex bg-gray-900 border border-gray-800 p-1 rounded-xl scale-90 shadow-inner">
+            <div className="flex bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-1 rounded-xl scale-90 shadow-inner">
               <button
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-lg transition-all ${
