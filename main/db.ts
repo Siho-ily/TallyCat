@@ -34,7 +34,7 @@ export interface Data {
   settings: Settings;
 }
 
-const defaultData: Data = {
+export const defaultData: Data = {
   records: [],
   categories: [
     { id: '1', type: 'income', name: '커트' },
@@ -42,7 +42,9 @@ const defaultData: Data = {
     { id: '3', type: 'income', name: '펌' },
     { id: '4', type: 'expense', name: '재료비' },
     { id: '5', type: 'expense', name: '월세' },
-    { id: '6', type: 'expense', name: '전기세' }
+    { id: '6', type: 'expense', name: '전기세' },
+    { id: '7', type: 'income', name: '기타' },
+    { id: '8', type: 'expense', name: '기타' }
   ],
   settings: {
     backup_interval: 7,
@@ -61,9 +63,16 @@ let db: any = null;
 export async function getDb() {
   if (db) return db;
 
-  const userDataPath = app.getPath('userData');
-  const dbPath = path.join(userDataPath, 'db.json');
+  try {
+    const userDataPath = app.getPath('userData');
+    const dbPath = path.join(userDataPath, 'db.json');
+    console.log('Initializing DB at:', dbPath);
 
-  db = await JSONFilePreset<Data>(dbPath, defaultData);
-  return db;
+    db = await JSONFilePreset<Data>(dbPath, defaultData);
+    console.log('DB initialized successfully');
+    return db;
+  } catch (error) {
+    console.error('Failed to initialize DB:', error);
+    throw error;
+  }
 }

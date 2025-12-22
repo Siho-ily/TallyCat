@@ -3,6 +3,7 @@ import { app, ipcMain } from 'electron';
 import serve from 'electron-serve';
 import { createWindow } from './helpers';
 import { registerIpcHandlers } from './ipcHandlers';
+import { runBackupService } from './backupService';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -15,7 +16,13 @@ if (isProd) {
 (async () => {
   await app.whenReady();
 
+  console.log('App ready. Registering IPC handlers...');
   registerIpcHandlers();
+
+  // Run initial backup check
+  runBackupService();
+  // Check every hour
+  setInterval(runBackupService, 1000 * 60 * 60);
 
   const mainWindow = createWindow('main', {
     width: 1200,
@@ -26,10 +33,10 @@ if (isProd) {
   });
 
   if (isProd) {
-    await mainWindow.loadURL('app://./home');
+    await mainWindow.loadURL('app://./');
   } else {
     const port = process.argv[2];
-    await mainWindow.loadURL(`http://localhost:${port}/home`);
+    await mainWindow.loadURL(`http://localhost:${port}/`);
     mainWindow.webContents.openDevTools();
   }
 })();

@@ -1,5 +1,5 @@
 import { ipcMain, dialog, app } from 'electron';
-import { getDb, Data, Record, Category, Settings } from './db';
+import { getDb, Data, Record, Category, Settings, defaultData } from './db';
 import { DateTime } from 'luxon';
 import fs from 'fs-extra';
 import path from 'path';
@@ -10,9 +10,14 @@ import crypto from 'crypto';
 export function registerIpcHandlers() {
   // --- Records CRUD ---
   ipcMain.handle('get-records', async () => {
-    const db = await getDb();
-    await db.read();
-    return db.data.records;
+    try {
+      const db = await getDb();
+      await db.read();
+      return db.data.records;
+    } catch (error) {
+      console.error('IPC get-records failed:', error);
+      throw error;
+    }
   });
 
   ipcMain.handle('add-record', async (_event, record: Omit<Record, 'id'>) => {
@@ -50,9 +55,19 @@ export function registerIpcHandlers() {
 
   // --- Categories CRUD ---
   ipcMain.handle('get-categories', async () => {
-    const db = await getDb();
-    await db.read();
-    return db.data.categories;
+    try {
+      const db = await getDb();
+      await db.read();
+      // Ensure '기타' exists if collection is empty or missing them
+      if (db.data.categories.length === 0) {
+        db.data.categories = [...defaultData.categories];
+        await db.write();
+      }
+      return db.data.categories;
+    } catch (error) {
+      console.error('IPC get-categories failed:', error);
+      throw error;
+    }
   });
 
   ipcMain.handle('save-category', async (_event, category: Category) => {
@@ -78,9 +93,19 @@ export function registerIpcHandlers() {
 
   // --- Settings & Storage ---
   ipcMain.handle('get-settings', async () => {
-    const db = await getDb();
-    await db.read();
-    return db.data.settings;
+    try {
+      const db = await getDb();
+      await db.read();
+      // Ensure settings exist (migration/safety)
+      if (!db.data.settings) {
+        db.data.settings = { ...defaultData.settings };
+        await db.write();
+      }
+      return db.data.settings;
+    } catch (error) {
+      console.error('IPC get-settings failed:', error);
+      throw error;
+    }
   });
 
   ipcMain.handle('update-settings', async (_event, settings: Settings) => {

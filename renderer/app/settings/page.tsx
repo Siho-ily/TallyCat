@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newCatName, setNewCatName] = useState('');
   const [newCatType, setNewCatType] = useState<'income' | 'expense'>('income');
 
@@ -26,12 +27,18 @@ export default function SettingsPage() {
 
   const fetchData = async () => {
     try {
+      if (!(window as any).ipc) {
+        console.warn('IPC not ready yet, retrying...');
+        setTimeout(fetchData, 100);
+        return;
+      }
       const cats = await (window as any).ipc.invoke('get-categories');
       const sets = await (window as any).ipc.invoke('get-settings');
       setCategories(cats);
       setSettings(sets);
     } catch (e) {
       console.error(e);
+      setError('설정 데이터를 불러오는 데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -63,8 +70,16 @@ export default function SettingsPage() {
     if (success) alert('데이터가 성공적으로 내보내졌습니다.');
   };
 
-  if (loading || !settings)
-    return <div className="text-blue-400 animate-pulse">설정을 불러오는 중...</div>;
+  if (loading) return <div className="text-blue-400 animate-pulse">설정을 불러오는 중...</div>;
+
+  if (error)
+    return (
+      <div className="text-rose-400 p-10 bg-rose-500/10 border border-rose-500/20 rounded-3xl">
+        {error}
+      </div>
+    );
+
+  if (!settings) return <div className="text-yellow-400 p-10">설정 정보가 없습니다.</div>;
 
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20">
