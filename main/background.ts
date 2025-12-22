@@ -19,10 +19,23 @@ if (isProd) {
   console.log('App ready. Registering IPC handlers...');
   registerIpcHandlers();
 
-  // Run initial backup check
-  runBackupService();
+  // Run initial backup check after a short delay to prioritize UI loading
+  setTimeout(async () => {
+    try {
+      await runBackupService();
+    } catch (e) {
+      console.error('Initial backup service failure:', e);
+    }
+  }, 5000);
+
   // Check every hour
-  setInterval(runBackupService, 1000 * 60 * 60);
+  setInterval(async () => {
+    try {
+      await runBackupService();
+    } catch (e) {
+      console.error('Hourly backup service failure:', e);
+    }
+  }, 1000 * 60 * 60);
 
   const mainWindow = createWindow('main', {
     width: 1200,

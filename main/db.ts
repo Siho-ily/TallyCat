@@ -19,16 +19,19 @@ export interface Category {
 }
 
 export interface Settings {
-  main_backup_interval: number;
-  sub_backup_interval: number;
+  main_backup_mode: 'interval' | 'monthly';
+  sub_backup_mode: 'interval' | 'monthly';
+  main_backup_interval: number[];
+  sub_backup_interval: number[];
   auto_backup: boolean;
   last_main_backup_date: string | null;
   last_sub_backup_date: string | null;
-  max_backup_size_gb: number;
+  main_max_backup_size_gb: number;
+  sub_max_backup_size_gb: number;
   main_backup_path: string;
   sub_backup_path: string;
-  auto_delete_months: number;
-  auto_delete_type: 'all' | 'auto' | 'manual';
+  main_auto_delete_months: number;
+  sub_auto_delete_months: number;
 }
 
 export interface Data {
@@ -50,47 +53,54 @@ export const defaultData: Data = {
     { id: '8', type: 'expense', name: '기타' }
   ],
   settings: {
-    main_backup_interval: 7,
-    sub_backup_interval: 30,
+    main_backup_mode: 'interval',
+    sub_backup_mode: 'interval',
+    main_backup_interval: [7],
+    sub_backup_interval: [30],
     auto_backup: true,
     last_main_backup_date: null,
     last_sub_backup_date: null,
-    max_backup_size_gb: 1.0,
+    main_max_backup_size_gb: 1.0,
+    sub_max_backup_size_gb: 5.0,
     main_backup_path: '',
     sub_backup_path: '',
-    auto_delete_months: 6,
-    auto_delete_type: 'all'
+    main_auto_delete_months: 3,
+    sub_auto_delete_months: 12
   }
 };
 
-let db: any = null;
+let dbInstance: Low<Data> | null = null;
+let initPromise: Promise<Low<Data>> | null = null;
 
-export async function getDb() {
-  if (db) return db;
+export async function getDb(): Promise<Low<Data>> {
+  if (dbInstance) return dbInstance;
+  if (initPromise) return initPromise;
 
-  try {
-    const userDataPath = app.getPath('userData');
-    const dbPath = path.join(userDataPath, 'db.json');
-    console.log('Initializing DB (lowdb v5) at:', dbPath);
+  initPromise = (async () => {
+    try {
+      const userDataPath = app.getPath('userData');
+      const dbPath = path.join(userDataPath, 'db.json');
+      console.log('Initializing DB (lowdb v5) at:', dbPath);
 
-    // Manual initialization for lowdb v5
-    const adapter = new JSONFile<Data>(dbPath);
-    db = new Low(adapter);
+      const adapter = new JSONFile<Data>(dbPath);
+      const db = new Low<Data>(adapter);
 
-    // Load data from file or use defaultData if file doesn't exist
-    await db.read();
+      await db.read();
 
-    // lowdb v5 doesn't automatically write defaultData if file is missing,
-    // so we handle it here:
-    if (db.data === null) {
-      db.data = { ...defaultData };
-      await db.write();
+      if (db.data === null) {
+        db.data = { ...defaultData };
+        await db.write();
+      }
+
+      console.log('DB initialized successfully');
+      dbInstance = db;
+      return db;
+    } catch (error) {
+      console.error('Failed to initialize DB:', error);
+      initPromise = null; // Allow retry
+      throw error;
     }
+  })();
 
-    console.log('DB initialized successfully');
-    return db;
-  } catch (error) {
-    console.error('Failed to initialize DB:', error);
-    throw error;
-  }
+  return initPromise;
 }

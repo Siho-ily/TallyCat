@@ -75,6 +75,9 @@ export function registerIpcHandlers() {
   ipcMain.handle('save-category', async (_event, category: Category) => {
     const db = await getDb();
     await db.read();
+    if (!db.data) db.data = { ...defaultData };
+    if (!db.data.categories) db.data.categories = [];
+
     if (category.id) {
       const index = db.data.categories.findIndex(c => c.id === category.id);
       if (index > -1) db.data.categories[index] = category;
@@ -97,23 +100,72 @@ export function registerIpcHandlers() {
   ipcMain.handle('get-settings', async () => {
     try {
       const db = await getDb();
-      await db.read();
-      if (!db.data) db.data = { ...defaultData };
       // Ensure settings exist (migration/safety)
       if (!db.data.settings) {
         db.data.settings = { ...defaultData.settings };
       } else {
         // Migration: If old keys exist but new ones don't
         if ((db.data.settings as any).backup_interval && !db.data.settings.main_backup_interval) {
-          db.data.settings.main_backup_interval = (db.data.settings as any).backup_interval;
-          db.data.settings.sub_backup_interval = (db.data.settings as any).backup_interval;
+          db.data.settings.main_backup_interval = [
+            Number((db.data.settings as any).backup_interval)
+          ];
+          db.data.settings.sub_backup_interval = [
+            Number((db.data.settings as any).backup_interval)
+          ];
+        }
+        // Ensure intervals are arrays even if migration already happened partially
+        if (!Array.isArray(db.data.settings.main_backup_interval)) {
+          db.data.settings.main_backup_interval = [
+            Number(db.data.settings.main_backup_interval) || 7
+          ];
+        }
+        if (!Array.isArray(db.data.settings.sub_backup_interval)) {
+          db.data.settings.sub_backup_interval = [
+            Number(db.data.settings.sub_backup_interval) || 30
+          ];
         }
         if ((db.data.settings as any).last_backup_date && !db.data.settings.last_main_backup_date) {
           db.data.settings.last_main_backup_date = (db.data.settings as any).last_backup_date;
           db.data.settings.last_sub_backup_date = (db.data.settings as any).last_backup_date;
         }
 
-        // Multi-layer merge to ensure new keys are present
+        if (
+          (db.data.settings as any).max_backup_size_gb &&
+          !db.data.settings.main_max_backup_size_gb
+        ) {
+          db.data.settings.main_max_backup_size_gb = (db.data.settings as any).max_backup_size_gb;
+          db.data.settings.sub_max_backup_size_gb = (db.data.settings as any).max_backup_size_gb;
+        }
+        if (
+          (db.data.settings as any).auto_delete_months &&
+          !db.data.settings.main_auto_delete_months
+        ) {
+          db.data.settings.main_auto_delete_months = (db.data.settings as any).auto_delete_months;
+          db.data.settings.sub_auto_delete_months = (db.data.settings as any).auto_delete_months;
+        }
+
+        // Ensure new numeric fields are never NaN or missing
+        if (!db.data.settings.main_max_backup_size_gb)
+          db.data.settings.main_max_backup_size_gb = defaultData.settings.main_max_backup_size_gb;
+        if (!db.data.settings.sub_max_backup_size_gb)
+          db.data.settings.sub_max_backup_size_gb = defaultData.settings.sub_max_backup_size_gb;
+        if (!db.data.settings.main_auto_delete_months)
+          db.data.settings.main_auto_delete_months = defaultData.settings.main_auto_delete_months;
+        if (!db.data.settings.sub_auto_delete_months)
+          db.data.settings.sub_auto_delete_months = defaultData.settings.sub_auto_delete_months;
+
+        // --- NEW: Default Path Logic ---
+        const docsPath = app.getPath('documents');
+        const defaultBase = path.join(docsPath, 'HairShop_Backups');
+
+        if (!db.data.settings.main_backup_path) {
+          db.data.settings.main_backup_path = path.join(defaultBase, 'Main');
+        }
+        if (!db.data.settings.sub_backup_path) {
+          db.data.settings.sub_backup_path = path.join(defaultBase, 'Sub');
+        }
+
+        // Multi-layer merge to ensure all new keys are present
         db.data.settings = { ...defaultData.settings, ...db.data.settings };
       }
       await db.write();

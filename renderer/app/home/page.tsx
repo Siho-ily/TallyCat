@@ -8,39 +8,53 @@ import {
   AlertCircle,
   ArrowUpRight,
   PlusCircle,
-  Clock
+  Clock,
+  ArrowDownRight,
+  Calendar,
+  Activity,
+  AlertTriangle
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Record, StorageInfo, Category } from '../../types';
+import { Record, Category, Settings, StorageInfo } from '../../types';
 import { DateTime } from 'luxon';
 import Link from 'next/link';
 
 export default function HomePage() {
   const [records, setRecords] = useState<Record[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [stats, setStats] = useState({
+    income: 0,
+    expense: 0,
+    profit: 0,
+    percentChange: 0
+  });
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const fetchedRecords: Record[] = await (window as any).ipc.invoke('get-records');
+        const fetchedCategories: Category[] = await (window as any).ipc.invoke('get-categories');
+        const fetchedSettings: Settings = await (window as any).ipc.invoke('get-settings');
+        const fetchedStorage: StorageInfo = await (window as any).ipc.invoke('check-storage');
+
+        setRecords(fetchedRecords);
+        setCategories(fetchedCategories);
+        setSettings(fetchedSettings);
+        setStorage(fetchedStorage);
+        calculateStats(fetchedRecords);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    try {
-      const fetchedRecords = await (window as any).ipc.invoke('get-records');
-      const fetchedCategories = await (window as any).ipc.invoke('get-categories');
-      const fetchedStorage = await (window as any).ipc.invoke('check-storage');
-      setRecords(fetchedRecords);
-      setCategories(fetchedCategories);
-      setStorage(fetchedStorage);
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const stats = React.useMemo(() => {
+  const calculateStats = (records: Record[]) => {
     const now = DateTime.now();
     const thisMonthRecords = records.filter(
       r =>
@@ -55,12 +69,13 @@ export default function HomePage() {
       .filter(r => r.type === 'expense')
       .reduce((sum, r) => sum + r.amount, 0);
 
-    return {
+    setStats({
       income,
       expense,
-      profit: income - expense
-    };
-  }, [records]);
+      profit: income - expense,
+      percentChange: 0
+    });
+  };
 
   const chartData = React.useMemo(() => {
     const days = [];
@@ -102,6 +117,38 @@ export default function HomePage() {
           <PlusCircle size={20} /> 새 내역 등록
         </Link>
       </div>
+
+      <div className="flex items-center gap-4 mb-10">
+        <div className="p-4 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl shadow-lg shadow-blue-500/20">
+          <TrendingUp className="text-white" size={32} />
+        </div>
+        <div>
+          <h2 className="text-4xl font-black text-white tracking-tight">대시보드</h2>
+          <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.2em] mt-1 pl-1">
+            Hairshop Sales & Analytics
+          </p>
+        </div>
+      </div>
+
+      {/* Backup Path Warning Banner */}
+      {settings && (!settings.main_backup_path || !settings.sub_backup_path) && (
+        <Link href="/settings" className="block mb-8 group">
+          <div className="bg-rose-500/10 border border-rose-500/20 p-6 rounded-3xl flex items-center gap-6 group-hover:bg-rose-500/20 transition-all animate-pulse">
+            <div className="p-4 bg-rose-500 rounded-2xl shadow-lg shadow-rose-500/40">
+              <AlertTriangle className="text-white" size={28} />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-lg font-black text-white">백업 경로가 지정되지 않았습니다!</h4>
+              <p className="text-rose-400 text-sm font-bold">
+                데이터 보호를 위해 설정에서 백업 저장 경로를 지정해 주세요. 클릭하여 이동합니다.
+              </p>
+            </div>
+            <div className="text-rose-500 font-black text-sm group-hover:translate-x-1 transition-transform">
+              지금 설정하러 가기 →
+            </div>
+          </div>
+        </Link>
+      )}
 
       {storage?.limitReached && (
         <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-4 text-red-400">

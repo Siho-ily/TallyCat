@@ -14,16 +14,19 @@ export interface Category {
 }
 
 export interface Settings {
-  main_backup_interval: number;
-  sub_backup_interval: number;
+  main_backup_mode: 'interval' | 'monthly';
+  sub_backup_mode: 'interval' | 'monthly';
+  main_backup_interval: number[]; // Array for multiple days or single interval
+  sub_backup_interval: number[];
   auto_backup: boolean;
   last_main_backup_date: string | null;
   last_sub_backup_date: string | null;
-  max_backup_size_gb: number;
+  main_max_backup_size_gb: number;
+  sub_max_backup_size_gb: number;
   main_backup_path: string;
   sub_backup_path: string;
-  auto_delete_months: number;
-  auto_delete_type: 'all' | 'auto' | 'manual';
+  main_auto_delete_months: number;
+  sub_auto_delete_months: number;
 }
 
 export interface StorageInfo {

@@ -6,7 +6,6 @@ import { DateTime } from 'luxon';
 
 export async function runBackupService() {
   const db = await getDb();
-  await db.read();
   const settings = db.data.settings;
 
   if (!settings.auto_backup) return;
@@ -17,10 +16,25 @@ export async function runBackupService() {
   const lastMain = settings.last_main_backup_date
     ? DateTime.fromISO(settings.last_main_backup_date)
     : null;
-  const shouldMain = !lastMain || now.diff(lastMain, 'days').days >= settings.main_backup_interval;
+  let shouldMain = false;
+
+  if (settings.main_backup_mode === 'monthly') {
+    // Check if it's one of the target days and not already backed up today
+    shouldMain =
+      settings.main_backup_interval.includes(now.day) &&
+      (!lastMain || lastMain.hasSame(now, 'day') === false);
+  } else {
+    // Interval mode (use first element)
+    const interval = settings.main_backup_interval[0] || 7;
+    shouldMain = !lastMain || now.diff(lastMain, 'days').days >= interval;
+  }
 
   if (shouldMain && settings.main_backup_path) {
-    console.log('Running main automatic backup...');
+    console.log(
+      `Running main automatic backup (${
+        settings.main_backup_mode
+      }: ${settings.main_backup_interval.join(',')})...`
+    );
     await performBackup(settings.main_backup_path, 'main');
     settings.last_main_backup_date = now.toISO();
     await db.write();
@@ -30,17 +44,27 @@ export async function runBackupService() {
   const lastSub = settings.last_sub_backup_date
     ? DateTime.fromISO(settings.last_sub_backup_date)
     : null;
-  const shouldSub = !lastSub || now.diff(lastSub, 'days').days >= settings.sub_backup_interval;
+  let shouldSub = false;
+
+  if (settings.sub_backup_mode === 'monthly') {
+    shouldSub =
+      settings.sub_backup_interval.includes(now.day) &&
+      (!lastSub || lastSub.hasSame(now, 'day') === false);
+  } else {
+    const interval = settings.sub_backup_interval[0] || 30;
+    shouldSub = !lastSub || now.diff(lastSub, 'days').days >= interval;
+  }
 
   if (shouldSub && settings.sub_backup_path) {
-    console.log('Running sub automatic backup...');
+    console.log(`Running sub automatic backup (${settings.sub_backup_mode})...`);
     await performBackup(settings.sub_backup_path, 'sub');
     settings.last_sub_backup_date = now.toISO();
     await db.write();
   }
 
-  // 2. Run cleanup if configured
-  await runCleanupService(settings);
+  // 3. Run individual cleanups
+  await runCleanupService('main', settings.main_backup_path, settings.main_auto_delete_months);
+  await runCleanupService('sub', settings.sub_backup_path, settings.sub_auto_delete_months);
 }
 
 async function performBackup(targetPath: string, label: string) {
@@ -64,31 +88,31 @@ async function performBackup(targetPath: string, label: string) {
   }
 }
 
-async function runCleanupService(settings: any) {
-  if (settings.auto_delete_months <= 0) return;
+async function runCleanupService(label: string, backupPath: string, months: number) {
+  if (months <= 0 || !backupPath) return;
 
-  const paths = [settings.main_backup_path, settings.sub_backup_path].filter(p => !!p);
-  const cutoffDate = DateTime.now().minus({ months: settings.auto_delete_months });
+  const cutoffDate = DateTime.now().minus({ months: months });
 
-  for (const backupPath of paths) {
-    try {
-      if (!(await fs.pathExists(backupPath))) continue;
+  try {
+    if (!(await fs.pathExists(backupPath))) return;
 
-      const files = await fs.readdir(backupPath);
-      const backupFiles = files.filter(f => f.startsWith('db_backup_') && f.endsWith('.json'));
+    const files = await fs.readdir(backupPath);
+    // Only clean files with the matching label to avoid cross-cleanup if paths are same
+    const backupFiles = files.filter(
+      f => f.startsWith(`db_backup_${label}_`) && f.endsWith('.json')
+    );
 
-      for (const file of backupFiles) {
-        const filePath = path.join(backupPath, file);
-        const stats = await fs.stat(filePath);
-        const fileDate = DateTime.fromJSDate(stats.mtime);
+    for (const file of backupFiles) {
+      const filePath = path.join(backupPath, file);
+      const stats = await fs.stat(filePath);
+      const fileDate = DateTime.fromJSDate(stats.mtime);
 
-        if (fileDate < cutoffDate) {
-          await fs.remove(filePath);
-          console.log(`Auto-deleted old backup: ${file}`);
-        }
+      if (fileDate < cutoffDate) {
+        await fs.remove(filePath);
+        console.log(`Auto-deleted old ${label} backup: ${file}`);
       }
-    } catch (error) {
-      console.error(`Cleanup failed for path ${backupPath}:`, error);
     }
+  } catch (error) {
+    console.error(`Cleanup failed for ${label} at ${backupPath}:`, error);
   }
 }
