@@ -66,7 +66,7 @@ export default function HomePage() {
   return (
     <div className="space-y-12 animate-in slide-in-from-bottom-4 duration-500 pb-20">
       <PageHeader
-        title="매장 현황판"
+        title="대시보드"
         description="현재 매장의 수입 및 지출 현황을 실시간으로 확인하세요."
         actions={
           <Button onClick={openAddForm} icon={<PlusCircle size={20} />}>

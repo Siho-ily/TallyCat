@@ -126,7 +126,7 @@ export default function RecordsPage() {
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-20">
       <PageHeader
-        title="조회 및 관리"
+        title="매출/매입 내역"
         description={`${currentDate.toFormat('yyyy년 MM월')} 매장 거래 내역입니다.`}
         actions={
           <>

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Settings as SettingsIcon, Sun, Moon } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -154,7 +154,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
-      <PageHeader title="시스템 설정" icon={<SettingsIcon />} />
+      <PageHeader title="시스템 설정" />
 
       <div className="space-y-8">
         {/* Theme Toggle Section */}
