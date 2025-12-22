@@ -31,13 +31,13 @@ export function CategoryList({ title, categories, onAdd, onEdit, onDelete }: Cat
           항목 추가
         </Button>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {categories.map(c => (
           <div
             key={c.id}
             onClick={() => onEdit(c)}
-            className="flex items-center gap-2 bg-gray-900 border border-gray-800 pl-4 pr-2 py-2 rounded-2xl group hover:border-blue-500/50 transition-all shadow-sm cursor-pointer hover:bg-gray-800">
-            <span className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">
+            className="flex items-center justify-center gap-1.5 bg-gray-900 border border-gray-800 px-3 py-1.5 rounded-xl group hover:border-blue-500/50 transition-all shadow-sm cursor-pointer hover:bg-gray-800">
+            <span className="text-xs font-bold text-gray-300 group-hover:text-blue-400 transition-colors">
               {c.name}
             </span>
             {c.name !== '기본' && (
@@ -46,8 +46,8 @@ export function CategoryList({ title, categories, onAdd, onEdit, onDelete }: Cat
                   e.stopPropagation();
                   onDelete(c.id);
                 }}
-                className="p-1 text-gray-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10 rounded-lg">
-                <PlusCircle size={14} className="rotate-45" />
+                className="p-0.5 text-gray-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10 rounded-md">
+                <PlusCircle size={12} className="rotate-45" />
               </button>
             )}
           </div>
