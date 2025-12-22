@@ -13,16 +13,17 @@ export default function RecordsGuide() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card title="빠른 기록 추가" icon={<PlusCircle size={20} className="text-blue-400" />}>
           <p className="text-sm text-gray-400 leading-relaxed">
-            대시보드나 내역 페이지의 <strong className="text-white">+ 버튼</strong>을 눌러보세요.
-            매출(수입)인 경우에는 금액과 항목을, 재료비나 공과금 같은 지출은 매입으로 기록하면
-            됩니다. 간단한 메모를 덧붙여 나중에 기억하기 쉽게 관리할 수 있습니다.
+            언제든 <strong className="text-white">+ 버튼</strong>을 눌러 내역을 추가할 수 있습니다.
+            실수를 줄이기 위해 초기 카테고리는 <strong>'기본'</strong> 상태로 시작하므로, 꼭
+            알맞은 항목을 선택해주세요. 금액, 날짜, 간단한 메모를 입력하면 기록이 완료됩니다.
           </p>
         </Card>
         <Card title="카테고리 활용" icon={<Settings size={20} className="text-gray-400" />}>
           <p className="text-sm text-gray-400 leading-relaxed">
-            <strong className="text-white">설정 &gt; 카테고리 관리</strong>에서 우리 매장만의 전용
-            항목을 만들어보세요. 커트, 펌, 염색 등 자주 쓰는 매출 항목을 등록해두면 기록할 때 클릭
-            한 번으로 입력이 가능합니다.
+            <strong className="text-white">설정 &gt; 카테고리 관리</strong>에서 항목을 추가하거나
+            클릭하여 <strong className="text-white">이름을 변경</strong>할 수 있습니다. 단, 시스템
+            기본값인 <strong>'기본'</strong> 카테고리는 삭제할 수 없으며, 불필요한 항목은 삭제하여
+            정리할 수 있습니다.
           </p>
         </Card>
       </div>

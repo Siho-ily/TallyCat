@@ -20,10 +20,9 @@ export default function AnalysisGuide() {
         </Card>
         <Card title="강력한 필터 시스템" icon={<Search size={20} className="text-emerald-400" />}>
           <p className="text-sm text-gray-400 leading-relaxed">
-            조회하고 싶은 기간(일/주/월/연)을 선택하고 유형이나 카테고리로 좁혀보세요. 상단에는{' '}
-            <strong className="text-white">전체 누적 통계</strong>가, 테이블 하단에는{' '}
-            <strong className="text-white">현재 필터링된 범위의 합계</strong>가 표시되어 원하는
-            정보를 즉시 알 수 있습니다.
+            조회하고 싶은 기간(일/주/월/연)을 선택하고 유형이나 카테고리로 좁혀보세요. 상단 통계
+            바에서 <strong className="text-white">수입 - 지출 = 순이익</strong>을 즉시 계산하여
+            보여줍니다. 복잡한 계산기 없이도 이번 달 매장이 얼마나 벌었는지 바로 확인하세요.
           </p>
         </Card>
       </div>
