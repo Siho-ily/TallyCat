@@ -8,6 +8,7 @@ interface ActionButtonProps {
   desc: string;
   onClick: () => void;
   variant?: 'secondary' | 'danger';
+  className?: string;
 }
 
 export default function ActionButton({
@@ -15,7 +16,8 @@ export default function ActionButton({
   title,
   desc,
   onClick,
-  variant = 'secondary'
+  variant = 'secondary',
+  className = ''
 }: ActionButtonProps) {
   return (
     <button
@@ -27,6 +29,7 @@ export default function ActionButton({
             ? 'bg-rose-600/5 border-rose-600/10 hover:bg-rose-600/10 hover:border-rose-600/30'
             : 'bg-gray-950 border-gray-800 hover:bg-gray-900 hover:border-gray-700'
         }
+        ${className}
       `}>
       <div
         className={`p-3 rounded-2xl ${

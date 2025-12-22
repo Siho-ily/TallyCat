@@ -60,19 +60,15 @@ export default function CategorySection({ categories, onAction }: CategorySectio
     <Card title="카테고리 관리" icon={<Package size={24} className="text-blue-400" />}>
       <div className="space-y-8">
         <CategoryList
-          type="income"
           title="매출 항목"
-          categories={categories.filter(c => c.type === 'income' && (c as any).is_active !== false)}
+          categories={categories.filter(c => c.type === 'income' && c.is_active !== false)}
           onAdd={() => onAction('add', 'income')}
           onDelete={id => onAction('delete', 'income', id)}
         />
         <div className="h-px bg-gray-800/50 mx-4" />
         <CategoryList
-          type="expense"
           title="매입 항목"
-          categories={categories.filter(
-            c => c.type === 'expense' && (c as any).is_active !== false
-          )}
+          categories={categories.filter(c => c.type === 'expense' && c.is_active !== false)}
           onAdd={() => onAction('add', 'expense')}
           onDelete={id => onAction('delete', 'expense', id)}
         />

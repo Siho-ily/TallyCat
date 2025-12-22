@@ -4,6 +4,7 @@ import React from 'react';
 import { HardDrive } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { Button, Input } from '../ui/InputControls';
+import { Settings } from '../../types';
 
 interface BackupConfigPanelProps {
   label: string;
@@ -17,7 +18,7 @@ interface BackupConfigPanelProps {
   retentionCount: number;
   path: string;
   lastDate: string;
-  onUpdate: (settings: any) => void;
+  onUpdate: (settings: Partial<Settings>) => void;
   prefix: 'main' | 'sub';
   colorClass: string;
   dotClass: string;
@@ -40,31 +41,31 @@ export default function BackupConfigPanel({
   colorClass,
   dotClass
 }: BackupConfigPanelProps) {
-  const [localInterval, setLocalInterval] = React.useState(interval.join(', '));
-  const [localMaxSize, setLocalMaxSize] = React.useState(maxSize.toString());
+  const [localInterval, setLocalInterval] = React.useState<string>((interval || []).join(', '));
+  const [localMaxSize, setLocalMaxSize] = React.useState<string>((maxSize || 0).toString());
 
   // Granular Retention Local States
-  const [localYears, setLocalYears] = React.useState(retentionYears.toString());
-  const [localMonths, setLocalMonths] = React.useState(retentionMonths.toString());
-  const [localDays, setLocalDays] = React.useState(retentionDays.toString());
-  const [localCount, setLocalCount] = React.useState(retentionCount.toString());
+  const [localYears, setLocalYears] = React.useState<string>((retentionYears || 0).toString());
+  const [localMonths, setLocalMonths] = React.useState<string>((retentionMonths || 0).toString());
+  const [localDays, setLocalDays] = React.useState<string>((retentionDays || 0).toString());
+  const [localCount, setLocalCount] = React.useState<string>((retentionCount || 0).toString());
 
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setLocalInterval(interval.join(', '));
+    setLocalInterval((interval || []).join(', '));
     setError(null);
   }, [interval]);
 
   React.useEffect(() => {
-    setLocalMaxSize(maxSize.toString());
+    setLocalMaxSize((maxSize || 0).toString());
   }, [maxSize]);
 
   React.useEffect(() => {
-    setLocalYears(retentionYears.toString());
-    setLocalMonths(retentionMonths.toString());
-    setLocalDays(retentionDays.toString());
-    setLocalCount(retentionCount.toString());
+    setLocalYears((retentionYears || 0).toString());
+    setLocalMonths((retentionMonths || 0).toString());
+    setLocalDays((retentionDays || 0).toString());
+    setLocalCount((retentionCount || 0).toString());
   }, [retentionYears, retentionMonths, retentionDays, retentionCount]);
 
   const handleApply = () => {
@@ -128,7 +129,7 @@ export default function BackupConfigPanel({
     }
   };
 
-  const handleRetentionUpdate = (field: string, val: any) => {
+  const handleRetentionUpdate = (field: 'years' | 'months' | 'days' | 'count', val: string) => {
     let numeric = parseInt(val) || 0;
     if (numeric < 0) numeric = 0;
 
