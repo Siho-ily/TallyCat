@@ -1,4 +1,5 @@
-import { JSONFilePreset } from 'lowdb/node';
+import { Low } from 'lowdb';
+import { JSONFile } from 'lowdb/node';
 import { app } from 'electron';
 import path from 'path';
 
@@ -18,9 +19,11 @@ export interface Category {
 }
 
 export interface Settings {
-  backup_interval: number; // days
+  main_backup_interval: number;
+  sub_backup_interval: number;
   auto_backup: boolean;
-  last_backup_date: string | null;
+  last_main_backup_date: string | null;
+  last_sub_backup_date: string | null;
   max_backup_size_gb: number;
   main_backup_path: string;
   sub_backup_path: string;
@@ -47,9 +50,11 @@ export const defaultData: Data = {
     { id: '8', type: 'expense', name: '기타' }
   ],
   settings: {
-    backup_interval: 7,
+    main_backup_interval: 7,
+    sub_backup_interval: 30,
     auto_backup: true,
-    last_backup_date: null,
+    last_main_backup_date: null,
+    last_sub_backup_date: null,
     max_backup_size_gb: 1.0,
     main_backup_path: '',
     sub_backup_path: '',
@@ -66,9 +71,22 @@ export async function getDb() {
   try {
     const userDataPath = app.getPath('userData');
     const dbPath = path.join(userDataPath, 'db.json');
-    console.log('Initializing DB at:', dbPath);
+    console.log('Initializing DB (lowdb v5) at:', dbPath);
 
-    db = await JSONFilePreset<Data>(dbPath, defaultData);
+    // Manual initialization for lowdb v5
+    const adapter = new JSONFile<Data>(dbPath);
+    db = new Low(adapter);
+
+    // Load data from file or use defaultData if file doesn't exist
+    await db.read();
+
+    // lowdb v5 doesn't automatically write defaultData if file is missing,
+    // so we handle it here:
+    if (db.data === null) {
+      db.data = { ...defaultData };
+      await db.write();
+    }
+
     console.log('DB initialized successfully');
     return db;
   } catch (error) {

@@ -11,19 +11,31 @@ export async function runBackupService() {
 
   if (!settings.auto_backup) return;
 
-  // 1. Check if backup is needed based on interval
   const now = DateTime.now();
-  const lastBackup = settings.last_backup_date ? DateTime.fromISO(settings.last_backup_date) : null;
 
-  const shouldBackup = !lastBackup || now.diff(lastBackup, 'days').days >= settings.backup_interval;
+  // 1. Check Main Backup
+  const lastMain = settings.last_main_backup_date
+    ? DateTime.fromISO(settings.last_main_backup_date)
+    : null;
+  const shouldMain = !lastMain || now.diff(lastMain, 'days').days >= settings.main_backup_interval;
 
-  if (shouldBackup) {
-    console.log('Running automatic backup...');
+  if (shouldMain && settings.main_backup_path) {
+    console.log('Running main automatic backup...');
     await performBackup(settings.main_backup_path, 'main');
-    await performBackup(settings.sub_backup_path, 'sub');
+    settings.last_main_backup_date = now.toISO();
+    await db.write();
+  }
 
-    // Update last backup date
-    settings.last_backup_date = now.toISO();
+  // 2. Check Sub Backup
+  const lastSub = settings.last_sub_backup_date
+    ? DateTime.fromISO(settings.last_sub_backup_date)
+    : null;
+  const shouldSub = !lastSub || now.diff(lastSub, 'days').days >= settings.sub_backup_interval;
+
+  if (shouldSub && settings.sub_backup_path) {
+    console.log('Running sub automatic backup...');
+    await performBackup(settings.sub_backup_path, 'sub');
+    settings.last_sub_backup_date = now.toISO();
     await db.write();
   }
 

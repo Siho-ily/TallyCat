@@ -53,18 +53,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             );
           })}
         </div>
-
-        <div className="p-6 mt-auto border-t border-gray-800 bg-gray-900/50">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-gray-300">오프라인 모드</p>
-              <p className="text-[10px] text-gray-500">데이터가 안전하게 보호됨</p>
-            </div>
-          </div>
-        </div>
       </nav>
 
       {/* Main Content */}

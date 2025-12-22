@@ -13,6 +13,7 @@ export function registerIpcHandlers() {
     try {
       const db = await getDb();
       await db.read();
+      if (!db.data) db.data = { ...defaultData };
       return db.data.records;
     } catch (error) {
       console.error('IPC get-records failed:', error);
@@ -58,6 +59,7 @@ export function registerIpcHandlers() {
     try {
       const db = await getDb();
       await db.read();
+      if (!db.data) db.data = { ...defaultData };
       // Ensure '기타' exists if collection is empty or missing them
       if (db.data.categories.length === 0) {
         db.data.categories = [...defaultData.categories];
@@ -96,11 +98,25 @@ export function registerIpcHandlers() {
     try {
       const db = await getDb();
       await db.read();
+      if (!db.data) db.data = { ...defaultData };
       // Ensure settings exist (migration/safety)
       if (!db.data.settings) {
         db.data.settings = { ...defaultData.settings };
-        await db.write();
+      } else {
+        // Migration: If old keys exist but new ones don't
+        if ((db.data.settings as any).backup_interval && !db.data.settings.main_backup_interval) {
+          db.data.settings.main_backup_interval = (db.data.settings as any).backup_interval;
+          db.data.settings.sub_backup_interval = (db.data.settings as any).backup_interval;
+        }
+        if ((db.data.settings as any).last_backup_date && !db.data.settings.last_main_backup_date) {
+          db.data.settings.last_main_backup_date = (db.data.settings as any).last_backup_date;
+          db.data.settings.last_sub_backup_date = (db.data.settings as any).last_backup_date;
+        }
+
+        // Multi-layer merge to ensure new keys are present
+        db.data.settings = { ...defaultData.settings, ...db.data.settings };
       }
+      await db.write();
       return db.data.settings;
     } catch (error) {
       console.error('IPC get-settings failed:', error);

@@ -107,16 +107,29 @@ export default function SettingsPage() {
                 className="w-5 h-5 accent-blue-600"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-gray-500 uppercase">
-                  백업 주기 (일)
+                  메인 백업 주기 (일)
                 </label>
                 <input
                   type="number"
-                  value={settings.backup_interval}
+                  value={settings.main_backup_interval}
                   onChange={e =>
-                    handleUpdateSettings({ backup_interval: parseInt(e.target.value) || 1 })
+                    handleUpdateSettings({ main_backup_interval: parseInt(e.target.value) || 1 })
+                  }
+                  className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/40 outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-500 uppercase">
+                  서브 백업 주기 (일)
+                </label>
+                <input
+                  type="number"
+                  value={settings.sub_backup_interval}
+                  onChange={e =>
+                    handleUpdateSettings({ sub_backup_interval: parseInt(e.target.value) || 1 })
                   }
                   className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/40 outline-none"
                 />
@@ -153,6 +166,47 @@ export default function SettingsPage() {
                   if (path) handleUpdateSettings({ sub_backup_path: path });
                 }}
               />
+            </div>
+            <div className="pt-6 border-t border-gray-800 space-y-4">
+              <h4 className="text-sm font-bold flex items-center gap-2 text-rose-400">
+                <Trash2 size={16} /> 백업 자동 정리 설정
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-500 uppercase">
+                    보관 기간 (개월)
+                  </label>
+                  <input
+                    type="number"
+                    value={settings.auto_delete_months}
+                    onChange={e =>
+                      handleUpdateSettings({ auto_delete_months: parseInt(e.target.value) || 0 })
+                    }
+                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-rose-500/40 outline-none"
+                    placeholder="0 = 영구 보관"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-500 uppercase">
+                    자동 정리 대상
+                  </label>
+                  <select
+                    value={settings.auto_delete_type}
+                    onChange={e =>
+                      handleUpdateSettings({
+                        auto_delete_type: e.target.value as any
+                      })
+                    }
+                    className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-rose-500/40 outline-none">
+                    <option value="all">모든 백업 파일</option>
+                    <option value="auto">자동 백업만</option>
+                    <option value="manual">수동 백업만</option>
+                  </select>
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-500">
+                * 보관 기간이 지난 파일은 프로그램 시작 시 자동으로 삭제됩니다.
+              </p>
             </div>
           </section>
           <section className="bg-gray-900/50 border border-gray-800 p-6 rounded-3xl space-y-6">

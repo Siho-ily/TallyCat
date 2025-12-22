@@ -142,50 +142,26 @@ export default function HomePage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-gray-900/50 border border-gray-800 p-6 rounded-3xl shadow-xl">
-          <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-            <PlusCircle size={18} className="text-blue-400" /> 최근 7일 흐름
-          </h3>
-          <div className="h-64 w-full font-mono text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" />
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#9ca3af' }}
-                  dy={10}
+      <div className="grid grid-cols-1 gap-6 mb-10">
+        <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-8 shadow-xl">
+          <div className="flex-1">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <AlertCircle size={20} className="text-blue-400" /> 데이터 저장소 및 백업 상태
+            </h3>
+            <div className="space-y-6">
+              <div className="flex justify-between items-end">
+                <StorageItem
+                  label="현재 데이터베이스 크기"
+                  value={`${((storage?.dbSize || 0) / 1024 / 1024).toFixed(2)} MB`}
+                  sub="정기적인 백업으로 데이터를 보호하세요."
                 />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af' }} />
-                <Tooltip
-                  cursor={{ fill: '#1f2937', radius: 4 }}
-                  contentStyle={{
-                    backgroundColor: '#111827',
-                    borderColor: '#374151',
-                    borderRadius: '12px'
-                  }}
-                />
-                <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
-                <Bar dataKey="expense" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-gray-900/50 border border-gray-800 p-6 rounded-3xl flex flex-col justify-between">
-          <div>
-            <h3 className="text-xl font-bold mb-4">저장소 요약</h3>
-            <div className="space-y-4">
-              <StorageItem
-                label="DB 파일 크기"
-                value={`${((storage?.dbSize || 0) / 1024 / 1024).toFixed(2)} MB`}
-                sub="전체 용량 체크"
-              />
-              <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                <p className="text-xs text-gray-500">
+                  남은 디스크 공간: {((storage?.freeSpace || 0) / 1024 / 1024 / 1024).toFixed(1)} GB
+                </p>
+              </div>
+              <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-blue-500 transition-all duration-500"
+                  className="h-full bg-blue-500 transition-all duration-700 ease-out"
                   style={{
                     width: `${Math.min(
                       100,
@@ -194,18 +170,15 @@ export default function HomePage() {
                   }}
                 />
               </div>
-              <p className="text-[10px] text-gray-500 text-right">
-                디스크 여유 공간: {((storage?.freeSpace || 0) / 1024 / 1024 / 1024).toFixed(1)} GB
-              </p>
             </div>
           </div>
-          <div className="mt-8 pt-6 border-t border-gray-800">
+          <div className="shrink-0">
             <Link
               href="/settings"
-              className="text-sm font-bold text-blue-400 hover:text-blue-300 flex items-center justify-between group">
-              백업 및 용량 설정{' '}
+              className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 transition-all group">
+              백업/정리 설정 바로가기
               <ArrowUpRight
-                size={16}
+                size={20}
                 className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"
               />
             </Link>
