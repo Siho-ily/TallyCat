@@ -1,25 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  PlusCircle,
-  Calendar as CalendarIcon,
-  ArrowUpRight,
-  ArrowDownRight,
-  Layers,
-  Search
-} from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { DateTime } from 'luxon';
 
-import StatCard from '../../components/ui/StatCard';
 import RecordFormModal from '../../components/ui/RecordFormModal';
 import RecordDetailModal from '../../components/ui/RecordDetailModal';
 import { Record } from '../../types';
 import { useData } from '../../context/DataContext';
 import PageHeader from '../../components/ui/PageHeader';
-import RecordTable from '../../components/records/RecordTable';
-import Card from '../../components/ui/Card';
 import { Button } from '../../components/ui/InputControls';
+
+// Refactored Components
+import StatsSection from '../../components/home/StatsSection';
+import RecentRecordsSection from '../../components/home/RecentRecordsSection';
 
 export default function HomePage() {
   const { records, categories, loading, refreshData } = useData();
@@ -61,6 +55,14 @@ export default function HomePage() {
     setIsFormOpen(true);
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-12 animate-in slide-in-from-bottom-4 duration-500 pb-20">
       <PageHeader
@@ -74,42 +76,17 @@ export default function HomePage() {
       />
 
       {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <StatCard
-          title="이번 달 총 매출"
-          value={`${monthlyIncome.toLocaleString()}원`}
-          icon={<ArrowUpRight size={24} />}
-          color="emerald"
-        />
-        <StatCard
-          title="이번 달 총 매입"
-          value={`${monthlyExpense.toLocaleString()}원`}
-          icon={<ArrowDownRight size={24} />}
-          color="rose"
-        />
-        <StatCard
-          title="현재 순수익"
-          value={`${(monthlyIncome - monthlyExpense).toLocaleString()}원`}
-          icon={<Layers size={24} />}
-          color="blue"
-        />
-      </div>
+      <StatsSection monthlyIncome={monthlyIncome} monthlyExpense={monthlyExpense} />
 
       {/* Recent Records Section */}
-      <Card
-        title="최근 거래 요약"
-        icon={<CalendarIcon size={20} className="text-gray-400" />}
-        noPadding>
-        <RecordTable
-          records={recentRecords}
-          categories={categories}
-          onRecordClick={r => {
-            setSelectedRecord(r);
-            setIsDetailOpen(true);
-          }}
-          showFooter={false}
-        />
-      </Card>
+      <RecentRecordsSection
+        records={recentRecords}
+        categories={categories}
+        onRecordClick={r => {
+          setSelectedRecord(r);
+          setIsDetailOpen(true);
+        }}
+      />
 
       {/* Modals */}
       <RecordFormModal
