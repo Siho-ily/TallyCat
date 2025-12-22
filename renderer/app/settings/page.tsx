@@ -171,55 +171,65 @@ export default function SettingsPage() {
           </Card>
 
           {/* Maintenance Actions */}
-          <Card title="고급 유틸리티" icon={<Zap size={24} className="text-amber-400" />}>
-            <div className="grid grid-cols-1 gap-4">
-              <ActionButton
-                icon={<ShieldCheck />}
-                title="전체 데이터 백업 (JSON)"
-                desc="설정 및 전체 내역을 파일로 저장"
-                onClick={() => handleExport('json')}
-              />
-              <ActionButton
-                icon={<FileDown />}
-                title="엑셀로 내보내기"
-                desc="내역 데이터를 엑셀 파일로 추출"
-                onClick={() => handleExport('xlsx')}
-              />
-              <ActionButton
-                icon={<FileUp />}
-                title="엑셀 데이터 가져오기"
-                desc="기존 장부 엑셀 파일을 시스템으로 이전"
-                onClick={async () => {
-                  const result = await (window as any).ipc.invoke('import-excel');
-                  if (result.success) {
-                    showAlert(result.message, '가져오기 완료');
-                    await refreshData();
-                  } else if (result.message !== '취소되었습니다.') {
-                    showAlert(result.message, '실패');
-                  }
-                }}
-              />
-              <ActionButton
-                icon={<FileUp />}
-                title="백업 데이터 복구"
-                desc="JSON 백업 파일로부터 복원"
-                onClick={handleImport}
-              />
-              <ActionButton
-                icon={<RotateCcw />}
-                title="데이터 완전 초기화"
-                desc="모든 내역과 설정이 삭제됩니다"
-                variant="danger"
-                onClick={() => {
-                  showConfirm(
-                    '모든 내역과 설정이 초기화됩니다. 정말 진행하시겠습니까?',
-                    '시스템 초기화',
-                    async () => {
-                      // Implementation for reset if needed
+          <Card title="시스템 유지보수" icon={<Zap size={24} className="text-amber-400" />}>
+            <div className="space-y-6">
+              {/* Export/Import Vertical Stack (1 per line) */}
+              <div className="flex flex-col gap-4">
+                {/* JSON Group */}
+                <ActionButton
+                  icon={<ShieldCheck />}
+                  title="전체 데이터 백업 (JSON)"
+                  desc="설정 정보를 포함한 전체 데이터를 파일로 저장합니다"
+                  onClick={() => handleExport('json')}
+                />
+                <ActionButton
+                  icon={<RotateCcw />}
+                  title="백업 데이터 복구 (JSON)"
+                  desc="저장된 JSON 백업 파일로부터 전체 데이터를 복원합니다"
+                  onClick={handleImport}
+                />
+
+                {/* Excel Group */}
+                <ActionButton
+                  icon={<FileDown />}
+                  title="내역 엑셀로 내보내기"
+                  desc="전체 내역을 가공이 용이한 엑셀 파일로 추출합니다"
+                  onClick={() => handleExport('xlsx')}
+                />
+                <ActionButton
+                  icon={<FileUp />}
+                  title="엑셀 데이터 가져오기"
+                  desc="기존 장부 등의 엑셀 데이터를 시스템으로 이전합니다"
+                  onClick={async () => {
+                    const result = await (window as any).ipc.invoke('import-excel');
+                    if (result.success) {
+                      showAlert(result.message, '가져오기 완료');
+                      await refreshData();
+                    } else if (result.message !== '취소되었습니다.') {
+                      showAlert(result.message, '실패');
                     }
-                  );
-                }}
-              />
+                  }}
+                />
+              </div>
+
+              {/* Dangerous Area */}
+              <div className="pt-4 border-t border-gray-800/50">
+                <ActionButton
+                  icon={<RotateCcw />}
+                  title="시스템 데이터 완전 초기화"
+                  desc="모든 내역과 설정이 영구적으로 삭제됩니다"
+                  variant="danger"
+                  onClick={() => {
+                    showConfirm(
+                      '초기화 후에는 데이터를 복구할 수 없습니다. 정말 모든 데이터를 삭제하시겠습니까?',
+                      '시스템 초기화 경고',
+                      async () => {
+                        // Reset logic handled in main if needed
+                      }
+                    );
+                  }}
+                />
+              </div>
             </div>
           </Card>
         </div>
@@ -394,12 +404,12 @@ function ActionButton({ icon, title, desc, onClick, variant = 'secondary' }: any
           variant === 'danger'
             ? 'bg-rose-500/10 text-rose-500'
             : 'bg-gray-900 text-blue-400 group-hover:bg-blue-600 group-hover:text-white'
-        } transition-all`}>
+        } transition-all flex-shrink-0`}>
         {React.cloneElement(icon as React.ReactElement, { size: 24 })}
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <p
-          className={`font-black tracking-tight ${
+          className={`font-black tracking-tight text-lg ${
             variant === 'danger' ? 'text-rose-500' : 'text-white'
           }`}>
           {title}
