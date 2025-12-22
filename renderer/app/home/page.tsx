@@ -31,27 +31,72 @@ export default function HomePage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasCache, setHasCache] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
+    // 1. Try to load from Cache first (Instant)
+    const loadCache = () => {
       try {
-        const fetchedRecords: Record[] = await (window as any).ipc.invoke('get-records');
-        const fetchedCategories: Category[] = await (window as any).ipc.invoke('get-categories');
-        const fetchedSettings: Settings = await (window as any).ipc.invoke('get-settings');
-        const fetchedStorage: StorageInfo = await (window as any).ipc.invoke('check-storage');
+        const cachedRecords = localStorage.getItem('cache_records');
+        const cachedStats = localStorage.getItem('cache_stats');
+        const cachedCats = localStorage.getItem('cache_categories');
+        const cachedSets = localStorage.getItem('cache_settings');
+
+        if (cachedRecords && cachedStats && cachedCats && cachedSets) {
+          setRecords(JSON.parse(cachedRecords));
+          setStats(JSON.parse(cachedStats));
+          setCategories(JSON.parse(cachedCats));
+          setSettings(JSON.parse(cachedSets));
+          setHasCache(true);
+          setLoading(false); // Hide skeletons immediately if cache exists
+        }
+      } catch (e) {
+        console.error('Failed to load dashboard cache:', e);
+      }
+    };
+
+    const fetchCoreData = async () => {
+      try {
+        const [fetchedRecords, fetchedCategories, fetchedSettings] = await Promise.all([
+          (window as any).ipc.invoke('get-records'),
+          (window as any).ipc.invoke('get-categories'),
+          (window as any).ipc.invoke('get-settings')
+        ]);
 
         setRecords(fetchedRecords);
         setCategories(fetchedCategories);
         setSettings(fetchedSettings);
-        setStorage(fetchedStorage);
-        calculateStats(fetchedRecords);
+
+        // Calculate and update stats
+        const freshStats = calculateStats(fetchedRecords);
+        setStats(freshStats);
+
+        // Update Cache for next visit
+        localStorage.setItem('cache_records', JSON.stringify(fetchedRecords));
+        localStorage.setItem('cache_categories', JSON.stringify(fetchedCategories));
+        localStorage.setItem('cache_settings', JSON.stringify(fetchedSettings));
+        localStorage.setItem('cache_stats', JSON.stringify(freshStats));
+
+        setLoading(false);
+        setHasCache(true);
       } catch (error) {
-        console.error('Failed to fetch data:', error);
-      } finally {
+        console.error('Failed to fetch core data:', error);
         setLoading(false);
       }
     };
-    fetchData();
+
+    const fetchBackgroundData = async () => {
+      try {
+        const fetchedStorage: StorageInfo = await (window as any).ipc.invoke('check-storage');
+        setStorage(fetchedStorage);
+      } catch (error) {
+        console.error('Failed to fetch storage info:', error);
+      }
+    };
+
+    loadCache();
+    fetchCoreData();
+    fetchBackgroundData();
   }, []);
 
   const calculateStats = (records: Record[]) => {
@@ -69,12 +114,12 @@ export default function HomePage() {
       .filter(r => r.type === 'expense')
       .reduce((sum, r) => sum + r.amount, 0);
 
-    setStats({
+    return {
       income,
       expense,
       profit: income - expense,
       percentChange: 0
-    });
+    };
   };
 
   const chartData = React.useMemo(() => {
@@ -95,12 +140,16 @@ export default function HomePage() {
     return days;
   }, [records]);
 
-  if (loading)
-    return (
-      <div className="flex items-center justify-center min-h-screen text-blue-400 animate-pulse bg-gray-950">
-        데이터를 불러오는 중...
+  // Use Skeleton UI instead of full-screen loader
+  const SkeletonCard = () => (
+    <div className="bg-gray-900/50 border border-gray-800 p-6 rounded-3xl animate-pulse space-y-4">
+      <div className="w-12 h-12 bg-gray-800 rounded-2xl" />
+      <div className="space-y-2">
+        <div className="w-20 h-3 bg-gray-800 rounded" />
+        <div className="w-32 h-6 bg-gray-800 rounded" />
       </div>
-    );
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -116,18 +165,6 @@ export default function HomePage() {
           className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-blue-600/20">
           <PlusCircle size={20} /> 새 내역 등록
         </Link>
-      </div>
-
-      <div className="flex items-center gap-4 mb-10">
-        <div className="p-4 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl shadow-lg shadow-blue-500/20">
-          <TrendingUp className="text-white" size={32} />
-        </div>
-        <div>
-          <h2 className="text-4xl font-black text-white tracking-tight">대시보드</h2>
-          <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.2em] mt-1 pl-1">
-            Hairshop Sales & Analytics
-          </p>
-        </div>
       </div>
 
       {/* Backup Path Warning Banner */}
@@ -163,74 +200,40 @@ export default function HomePage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          title="총 매출"
-          value={stats.income}
-          icon={TrendingUp}
-          color="text-emerald-400"
-          bg="bg-emerald-500/10"
-          border="border-emerald-500/20"
-        />
-        <StatCard
-          title="총 지출"
-          value={stats.expense}
-          icon={TrendingDown}
-          color="text-rose-400"
-          bg="bg-rose-500/10"
-          border="border-rose-500/20"
-        />
-        <StatCard
-          title="순이익"
-          value={stats.profit}
-          icon={Wallet}
-          color="text-blue-400"
-          bg="bg-blue-500/10"
-          border="border-blue-500/20"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 mb-10">
-        <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-8 shadow-xl">
-          <div className="flex-1">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <AlertCircle size={20} className="text-blue-400" /> 데이터 저장소 및 백업 상태
-            </h3>
-            <div className="space-y-6">
-              <div className="flex justify-between items-end">
-                <StorageItem
-                  label="현재 데이터베이스 크기"
-                  value={`${((storage?.dbSize || 0) / 1024 / 1024).toFixed(2)} MB`}
-                  sub="정기적인 백업으로 데이터를 보호하세요."
-                />
-                <p className="text-xs text-gray-500">
-                  남은 디스크 공간: {((storage?.freeSpace || 0) / 1024 / 1024 / 1024).toFixed(1)} GB
-                </p>
-              </div>
-              <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-blue-500 transition-all duration-700 ease-out"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      ((storage?.dbSize || 0) / (1024 * 1024 * 1024)) * 100
-                    )}%`
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="shrink-0">
-            <Link
-              href="/settings"
-              className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 transition-all group">
-              백업/정리 설정 바로가기
-              <ArrowUpRight
-                size={20}
-                className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"
-              />
-            </Link>
-          </div>
-        </div>
+        {loading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="총 매출"
+              value={stats.income}
+              icon={TrendingUp}
+              color="text-emerald-400"
+              bg="bg-emerald-500/10"
+              border="border-emerald-500/20"
+            />
+            <StatCard
+              title="총 지출"
+              value={stats.expense}
+              icon={TrendingDown}
+              color="text-rose-400"
+              bg="bg-rose-500/10"
+              border="border-rose-500/20"
+            />
+            <StatCard
+              title="순이익"
+              value={stats.profit}
+              icon={Wallet}
+              color="text-blue-400"
+              bg="bg-blue-500/10"
+              border="border-blue-500/20"
+            />
+          </>
+        )}
       </div>
 
       {/* Recent Records Summary */}

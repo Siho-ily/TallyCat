@@ -6,12 +6,18 @@ import {
   Settings as SettingsIcon,
   Database,
   Download,
+  Search,
+  Filter,
+  CheckCircle,
+  FileSpreadsheet,
+  FileCode,
+  AlertCircle,
+  FolderOpen,
+  RotateCcw,
   Trash2,
   Plus,
   ShieldCheck,
-  FileSpreadsheet,
-  FileJson,
-  AlertCircle
+  FileUp
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -82,8 +88,49 @@ export default function SettingsPage() {
   };
 
   const handleExport = async (format: 'xlsx' | 'json') => {
-    const success = await (window as any).ipc.invoke('export-data', format);
-    if (success) alert('데이터가 성공적으로 내보내졌습니다.');
+    try {
+      const result = await (window as any).ipc.invoke('export-data', format);
+      if (result) alert('데이터를 성공적으로 내보냈습니다.');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('데이터 내보내기 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleImport = async () => {
+    const ok = confirm(
+      '데이터를 불러오면 현재 저장된 모든 내역이 사라지고 백업 파일의 내용으로 교체됩니다. 정말로 복구하시겠습니까?'
+    );
+    if (!ok) return;
+
+    try {
+      const result = await (window as any).ipc.invoke('import-data');
+      alert(result.message);
+      if (result.success) {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Import failed:', error);
+      alert('데이터를 불러오는 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleImportExcel = async () => {
+    const ok = confirm(
+      '엑셀 내역을 현재 장부에 추가합니다. 날짜, 금액, 유형(수입/지출), 카테고리 컬럼이 포함된 파일이어야 합니다. 계속하시겠습니까?'
+    );
+    if (!ok) return;
+
+    try {
+      const result = await (window as any).ipc.invoke('import-excel');
+      alert(result.message);
+      if (result.success) {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Excel Import failed:', error);
+      alert('엑셀 데이터를 불러오는 중 오류가 발생했습니다.');
+    }
   };
 
   if (loading) return <div className="text-blue-400 animate-pulse">설정을 불러오는 중...</div>;
@@ -369,30 +416,44 @@ export default function SettingsPage() {
 
           <section className="bg-gray-900/50 border border-gray-800 p-8 rounded-3xl space-y-6 shadow-xl flex flex-col">
             <h3 className="text-xl font-black flex items-center gap-3">
-              <Download size={24} className="text-blue-400" /> 수동 데이터 내보내기
+              <Download size={24} className="text-blue-400" /> 데이터 내보내기 및 복구
             </h3>
             <p className="text-sm text-gray-500 leading-relaxed">
-              등록된 모든 데이터를 엑셀 또는 JSON 파일로 즉시 저장할 수 있습니다. 정기 백업 외에
-              외부 보관이 필요할 때 사용하세요.
+              데이터를 엑셀/JSON으로 내보내거나, 저장된 JSON 백업 파일을 불러와 현재 데이터를 과거
+              시점으로 복구할 수 있습니다.
             </p>
-            <div className="grid grid-cols-2 gap-4 mt-auto">
+            <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => handleExport('xlsx')}
-                className="flex flex-col items-center justify-center p-8 bg-emerald-500/5 border border-emerald-500/10 rounded-3xl hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group">
+                className="flex flex-col items-center justify-center p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-3xl hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group">
                 <FileSpreadsheet
-                  className="text-emerald-500 mb-3 group-hover:scale-110 transition-transform"
-                  size={40}
+                  className="text-emerald-500 mb-2 group-hover:scale-110 transition-transform"
+                  size={32}
                 />
-                <span className="text-sm font-black text-emerald-400">EXCEL 저장</span>
+                <span className="text-[10px] font-black text-emerald-400">엑셀 저장</span>
               </button>
               <button
                 onClick={() => handleExport('json')}
-                className="flex flex-col items-center justify-center p-8 bg-blue-500/5 border border-blue-500/10 rounded-3xl hover:bg-blue-500/10 hover:border-blue-500/30 transition-all group">
-                <FileJson
-                  className="text-blue-500 mb-3 group-hover:scale-110 transition-transform"
-                  size={40}
+                className="flex flex-col items-center justify-center p-6 bg-blue-500/5 border border-blue-500/10 rounded-3xl hover:bg-blue-500/10 hover:border-blue-500/30 transition-all group">
+                <FileCode
+                  className="text-blue-500 mb-2 group-hover:scale-110 transition-transform"
+                  size={32}
                 />
-                <span className="text-sm font-black text-blue-400">JSON 저장</span>
+                <span className="text-[10px] font-black text-blue-400">JSON 저장</span>
+              </button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleImport}
+                className="w-full flex items-center justify-center gap-3 p-5 bg-purple-600/10 border border-purple-500/20 rounded-3xl hover:bg-purple-600/20 hover:border-purple-500/40 transition-all group text-purple-400 font-black text-sm">
+                <RotateCcw size={20} className="group-hover:rotate-[-45deg] transition-transform" />
+                JSON 백업 파일로 데이터 복구하기
+              </button>
+              <button
+                onClick={handleImportExcel}
+                className="w-full flex items-center justify-center gap-3 p-5 bg-emerald-600/10 border border-emerald-500/20 rounded-3xl hover:bg-emerald-600/20 hover:border-emerald-500/40 transition-all group text-emerald-400 font-black text-sm">
+                <FileUp size={20} className="group-hover:translate-y-[-2px] transition-transform" />
+                엑셀 데이터 일괄 가져오기 (이사하기)
               </button>
             </div>
           </section>

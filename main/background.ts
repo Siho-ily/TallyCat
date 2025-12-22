@@ -1,5 +1,5 @@
 import path from 'path';
-import { app, ipcMain } from 'electron';
+import { app, ipcMain, Menu } from 'electron';
 import serve from 'electron-serve';
 import { createWindow } from './helpers';
 import { registerIpcHandlers } from './ipcHandlers';
@@ -18,6 +18,9 @@ if (isProd) {
 
   console.log('App ready. Registering IPC handlers...');
   registerIpcHandlers();
+
+  // Remove default menu bar (File, Edit, etc.)
+  Menu.setApplicationMenu(null);
 
   // Run initial backup check after a short delay to prioritize UI loading
   setTimeout(async () => {
