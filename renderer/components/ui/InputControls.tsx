@@ -65,6 +65,24 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, prefixIcon, suffix, className = '', ...props }, ref) => {
+    const internalRef = React.useRef<HTMLInputElement>(null);
+    React.useImperativeHandle(ref, () => internalRef.current!);
+
+    const handlePrefixClick = () => {
+      if (internalRef.current) {
+        if (props.type === 'date' || props.type === 'datetime-local' || props.type === 'time') {
+          try {
+            (internalRef.current as any).showPicker();
+          } catch (e) {
+            internalRef.current.focus();
+            internalRef.current.click();
+          }
+        } else {
+          internalRef.current.focus();
+        }
+      }
+    };
+
     return (
       <div className="space-y-1.5 w-full">
         {label && (
@@ -74,12 +92,22 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative group">
           {prefixIcon && (
-            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors">
+            <div
+              onClick={handlePrefixClick}
+              className={`
+                absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 
+                transition-colors z-10 
+                ${
+                  props.type === 'date' || props.type === 'datetime-local'
+                    ? 'cursor-pointer hover:text-blue-400'
+                    : 'pointer-events-none'
+                }
+              `}>
               {prefixIcon}
             </div>
           )}
           <input
-            ref={ref}
+            ref={internalRef}
             className={`
               w-full bg-gray-950 border border-gray-800 rounded-2xl py-3.5 text-sm font-bold 
               focus:ring-2 focus:ring-blue-500/40 outline-none transition-all placeholder-gray-800

@@ -31,3 +31,35 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-700;
 }
+
+/* Hide Spin Buttons */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+/* Custom styles for date/time input icons */
+input[type='datetime-local']::-webkit-calendar-picker-indicator,
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0; /* Hide default icon but keep hit area or just hide it */
+}
+
+/* For modern browsers, sometimes we just want to hide it completely if we rely on JS showPicker */
+input::-webkit-calendar-picker-indicator {
+  display: none !important;
+  -webkit-appearance: none;
+}
