@@ -71,12 +71,12 @@ export default function RecordTable({
             <tfoot className="bg-gray-800/50 border-t border-gray-700">
               <tr>
                 <td colSpan={2} className="px-6 py-4">
-                  <div className="flex gap-6">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
-                        페이지 내 매출
+                  <div className="flex gap-10">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                        조회 내 매출
                       </span>
-                      <span className="text-xs font-black text-emerald-400">
+                      <span className="text-sm font-black text-emerald-400">
                         +
                         {records
                           .filter(r => r.type === 'income')
@@ -85,11 +85,11 @@ export default function RecordTable({
                         원
                       </span>
                     </div>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
-                        페이지 내 매입
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                        조회 내 매입
                       </span>
-                      <span className="text-xs font-black text-rose-400">
+                      <span className="text-sm font-black text-rose-400">
                         -
                         {records
                           .filter(r => r.type === 'expense')
@@ -101,12 +101,12 @@ export default function RecordTable({
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right" colSpan={2}>
-                  <div className="flex flex-col items-end gap-0.5">
-                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
-                      필터링 전체 합계 (순이익)
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                      현재 필터 결과 (순익)
                     </span>
                     <span
-                      className={`text-lg font-black ${
+                      className={`text-xl font-black ${
                         netProfit >= 0 ? 'text-blue-400' : 'text-rose-400'
                       }`}>
                       {netProfit >= 0 ? '+' : ''}

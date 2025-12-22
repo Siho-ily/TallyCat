@@ -17,8 +17,10 @@ import { Button } from '../../components/ui/InputControls';
 export default function RecordsPage() {
   const { records, categories, loading, refreshData } = useData();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
-  const [startDate, setStartDate] = useState(DateTime.now().startOf('month').toISODate() || '');
-  const [endDate, setEndDate] = useState(DateTime.now().endOf('month').toISODate() || '');
+
+  // Filtering states
+  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [currentDate, setCurrentDate] = useState(DateTime.now());
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,8 +32,6 @@ export default function RecordsPage() {
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [initialData, setInitialData] = useState<any>(null);
-
-  const currentMonth = DateTime.fromISO(startDate).startOf('month');
 
   const handleOpenAddModal = (date?: DateTime) => {
     setEditingRecord(null);
@@ -46,9 +46,11 @@ export default function RecordsPage() {
   const filteredRecords = React.useMemo(() => {
     let result = [...records];
 
+    // 1. Type & Category Filter
     if (filterType !== 'all') result = result.filter(r => r.type === filterType);
     if (filterCategory !== 'all') result = result.filter(r => r.category_id === filterCategory);
 
+    // 2. Search Filter
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       result = result.filter(
@@ -62,8 +64,9 @@ export default function RecordsPage() {
       );
     }
 
-    const start = DateTime.fromISO(startDate).startOf('day');
-    const end = DateTime.fromISO(endDate).endOf('day');
+    // 3. Period Filter
+    const start = currentDate.startOf(period);
+    const end = currentDate.endOf(period);
 
     result = result.filter(r => {
       const d = DateTime.fromFormat(r.date, 'yyyy-MM-dd HH:mm:ss');
@@ -71,11 +74,11 @@ export default function RecordsPage() {
     });
 
     return result.sort((a, b) => b.date.localeCompare(a.date));
-  }, [records, filterType, filterCategory, searchTerm, startDate, endDate, categories]);
+  }, [records, filterType, filterCategory, searchTerm, currentDate, period, categories]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterType, filterCategory, searchTerm, startDate, endDate, viewMode]);
+  }, [filterType, filterCategory, searchTerm, currentDate, period, viewMode]);
 
   const paginatedRecords = React.useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -95,10 +98,22 @@ export default function RecordsPage() {
     );
   }, [filteredRecords]);
 
+  const globalTotals = React.useMemo(() => {
+    return records.reduce(
+      (acc, record) => {
+        if (record.type === 'income') acc.income += record.amount;
+        else acc.expense += record.amount;
+        return acc;
+      },
+      { income: 0, expense: 0 }
+    );
+  }, [records]);
+
   const calendarDays = React.useMemo(() => {
-    const firstDay = currentMonth.startOf('month');
+    // For calendar, always show the full month of the current focus date
+    const firstDay = currentDate.startOf('month');
     const start = firstDay.minus({ days: firstDay.weekday % 7 });
-    const lastDay = currentMonth.endOf('month');
+    const lastDay = currentDate.endOf('month');
     const end = lastDay.plus({ days: 6 - (lastDay.weekday % 7) });
     const days = [];
     let curr = start;
@@ -112,7 +127,7 @@ export default function RecordsPage() {
 
       days.push({
         date: curr,
-        isCurrentMonth: curr.month === currentMonth.month,
+        isCurrentMonth: curr.month === currentDate.month,
         income,
         expense,
         profit: income - expense
@@ -120,24 +135,7 @@ export default function RecordsPage() {
       curr = curr.plus({ days: 1 });
     }
     return days;
-  }, [currentMonth, records]);
-
-  const handleResetFilters = () => {
-    setStartDate(DateTime.now().startOf('month').toISODate() || '');
-    setEndDate(DateTime.now().endOf('month').toISODate() || '');
-    setFilterType('all');
-    setFilterCategory('all');
-    setSearchTerm('');
-    setCurrentPage(1);
-  };
-
-  const handleExport = async () => {
-    try {
-      await (window as any).ipc.invoke('export-data', 'xlsx');
-    } catch (error) {
-      console.error('Export failed:', error);
-    }
-  };
+  }, [currentDate, records]);
 
   if (loading)
     return (
@@ -149,22 +147,45 @@ export default function RecordsPage() {
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-20">
       <PageHeader
-        title="매출/매입 내역"
-        description="기간별 거래 내역을 상세히 조회하고 관리할 수 있습니다."
+        title="조회 및 관리"
+        description={`${currentDate.toFormat('yyyy년 MM월')} 매장 거래 내역입니다.`}
         actions={
-          <Button onClick={() => handleOpenAddModal()} icon={<PlusCircle size={18} />}>
-            내역 추가
-          </Button>
+          <>
+            <div className="flex bg-gray-900 border border-gray-800 p-1 rounded-xl scale-90 shadow-inner">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-lg transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}>
+                <List size={18} />
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode('calendar');
+                  setPeriod('month'); // Always month for calendar
+                }}
+                className={`p-2 rounded-lg transition-all ${
+                  viewMode === 'calendar'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}>
+                <CalendarIcon size={18} />
+              </button>
+            </div>
+            <Button onClick={() => handleOpenAddModal()} icon={<PlusCircle size={18} />}>
+              내역 추가
+            </Button>
+          </>
         }
       />
 
       <RecordFilterBar
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        startDate={startDate}
-        endDate={endDate}
-        setStartDate={setStartDate}
-        setEndDate={setEndDate}
+        period={period}
+        setPeriod={setPeriod}
+        currentDate={currentDate}
+        setCurrentDate={setCurrentDate}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         filterType={filterType}
@@ -172,9 +193,8 @@ export default function RecordsPage() {
         filterCategory={filterCategory}
         setFilterCategory={setFilterCategory}
         categories={categories}
-        totalIncome={totals.income}
-        totalExpense={totals.expense}
-        onExport={handleExport}
+        globalIncome={globalTotals.income}
+        globalExpense={globalTotals.expense}
       />
 
       {viewMode === 'list' ? (
@@ -186,6 +206,7 @@ export default function RecordsPage() {
               setSelectedRecord(record);
               setIsDetailModalOpen(true);
             }}
+            netProfit={totals.income - totals.expense}
           />
           <Pagination
             currentPage={currentPage}

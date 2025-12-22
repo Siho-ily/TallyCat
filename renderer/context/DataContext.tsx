@@ -12,13 +12,15 @@ interface DataContextType {
   refreshData: () => Promise<void>;
   showAlert: (message: string, title?: string) => void;
   showConfirm: (message: string, title?: string, onConfirm?: () => void) => void;
+  showPrompt: (message: string, title?: string, onConfirm?: (value: string) => void) => void;
   modalConfig: {
     isOpen: boolean;
-    type: 'alert' | 'confirm';
+    type: 'alert' | 'confirm' | 'prompt';
     title: string;
     message: string;
-    onConfirm?: () => void;
+    onConfirm?: (value?: any) => void;
     onCancel?: () => void;
+    defaultValue?: string;
   };
 }
 
@@ -64,6 +66,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const showPrompt = useCallback(
+    (message: string, title: string = '입력', onConfirm?: (value: string) => void) => {
+      setModalConfig({
+        isOpen: true,
+        type: 'prompt',
+        title,
+        message,
+        onConfirm: (value: string) => {
+          onConfirm?.(value);
+          setModalConfig(prev => ({ ...prev, isOpen: false }));
+        },
+        onCancel: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+      });
+    },
+    []
+  );
+
   const refreshData = useCallback(async () => {
     try {
       // Parallel fetching for performance
@@ -100,6 +119,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         refreshData,
         showAlert,
         showConfirm,
+        showPrompt,
         modalConfig
       }}>
       {children}

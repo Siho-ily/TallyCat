@@ -20,7 +20,8 @@ import { Button, Input } from '../../components/ui/InputControls';
 import { Settings } from '../../types';
 
 export default function SettingsPage() {
-  const { categories, settings, loading, refreshData, showAlert, showConfirm } = useData();
+  const { categories, settings, loading, refreshData, showAlert, showConfirm, showPrompt } =
+    useData();
 
   const handleUpdateSettings = async (newSettings: Partial<Settings>) => {
     try {
@@ -65,17 +66,27 @@ export default function SettingsPage() {
     type: 'income' | 'expense',
     id?: string
   ) => {
-    if (action === 'add') {
-      const name = prompt('새 카테고리 이름을 입력하세요:');
-      if (name) {
-        await (window as any).ipc.invoke('save-category', { type, name });
-        await refreshData();
+    try {
+      if (action === 'add') {
+        showPrompt('새 카테고리 이름을 입력하세요:', '카테고리 추가', async name => {
+          if (name && name.trim()) {
+            const success = await (window as any).ipc.invoke('save-category', {
+              type,
+              name: name.trim()
+            });
+            if (success) await refreshData();
+          }
+        });
+      } else if (action === 'delete' && id) {
+        if (confirm('카테고리를 삭제하시겠습니까?')) {
+          const success = await (window as any).ipc.invoke('delete-category', id);
+          if (success) await refreshData();
+        }
       }
-    } else if (action === 'delete' && id) {
-      if (confirm('카테고리를 삭제하시겠습니까?')) {
-        await (window as any).ipc.invoke('delete-category', id);
-        await refreshData();
-      }
+    } catch (error: any) {
+      console.error('Category action failed:', error);
+      const msg = error?.message || '카테고리 수정 중 오류가 발생했습니다.';
+      showAlert(msg, '오류');
     }
   };
 
@@ -97,22 +108,24 @@ export default function SettingsPage() {
           title="데이터 보호 및 백업 정책"
           icon={<ShieldCheck size={24} className="text-emerald-400" />}
           actions={
-            <div className="flex items-center gap-3 bg-gray-950 px-4 py-2 rounded-2xl border border-gray-800">
-              <span className="text-xs font-bold text-gray-400">자동 백업</span>
+            <div className="flex items-center gap-3 bg-gray-950 px-4 py-2 rounded-2xl border border-gray-800 shadow-inner">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                실시간 감시
+              </span>
               <input
                 type="checkbox"
                 checked={settings.auto_backup}
                 onChange={e => handleUpdateSettings({ auto_backup: e.target.checked })}
-                className="w-5 h-5 accent-blue-600"
+                className="w-5 h-5 accent-blue-600 cursor-pointer"
               />
             </div>
           }>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <BackupConfigPanel
-              label="메인(Main) 저장 정책"
+              label="기본(Main) 백업 저장소"
               mode={settings.main_backup_mode}
               interval={settings.main_backup_interval}
-              maxSize={settings.main_max_backup_size_gb}
+              maxSize={settings.main_max_backup_size_mb}
               autoDelete={settings.main_auto_delete_months}
               path={settings.main_backup_path}
               colorClass="text-blue-400"
@@ -121,10 +134,10 @@ export default function SettingsPage() {
               prefix="main"
             />
             <BackupConfigPanel
-              label="보조(Sub) 저장 정책"
+              label="외부(Sub) 백업 저장소"
               mode={settings.sub_backup_mode}
               interval={settings.sub_backup_interval}
-              maxSize={settings.sub_max_backup_size_gb}
+              maxSize={settings.sub_max_backup_size_mb}
               autoDelete={settings.sub_auto_delete_months}
               path={settings.sub_backup_path}
               colorClass="text-emerald-400"
@@ -138,17 +151,18 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Category Management */}
           <Card title="카테고리 관리" icon={<Package size={24} className="text-blue-400" />}>
-            <div className="space-y-6">
+            <div className="space-y-8">
               <CategoryList
                 type="income"
-                title="매출 카테고리"
+                title="매출 항목"
                 categories={categories.filter(c => c.type === 'income')}
                 onAdd={() => handleCategoryAction('add', 'income')}
                 onDelete={(id: string) => handleCategoryAction('delete', 'income', id)}
               />
+              <div className="h-px bg-gray-800/50 mx-4" />
               <CategoryList
                 type="expense"
-                title="매입 카테고리"
+                title="매입 항목"
                 categories={categories.filter(c => c.type === 'expense')}
                 onAdd={() => handleCategoryAction('add', 'expense')}
                 onDelete={(id: string) => handleCategoryAction('delete', 'expense', id)}
@@ -157,24 +171,44 @@ export default function SettingsPage() {
           </Card>
 
           {/* Maintenance Actions */}
-          <Card title="시스템 관리 유틸리티" icon={<Zap size={24} className="text-amber-400" />}>
+          <Card title="고급 유틸리티" icon={<Zap size={24} className="text-amber-400" />}>
             <div className="grid grid-cols-1 gap-4">
               <ActionButton
+                icon={<ShieldCheck />}
+                title="전체 데이터 백업 (JSON)"
+                desc="설정 및 전체 내역을 파일로 저장"
+                onClick={() => handleExport('json')}
+              />
+              <ActionButton
                 icon={<FileDown />}
-                title="데이터 내보내기"
-                desc="엑셀 또는 JSON 파일로 백업"
+                title="엑셀로 내보내기"
+                desc="내역 데이터를 엑셀 파일로 추출"
                 onClick={() => handleExport('xlsx')}
               />
               <ActionButton
                 icon={<FileUp />}
-                title="데이터 불러오기"
-                desc="백업 파일로부터 전체 복구"
+                title="엑셀 데이터 가져오기"
+                desc="기존 장부 엑셀 파일을 시스템으로 이전"
+                onClick={async () => {
+                  const result = await (window as any).ipc.invoke('import-excel');
+                  if (result.success) {
+                    showAlert(result.message, '가져오기 완료');
+                    await refreshData();
+                  } else if (result.message !== '취소되었습니다.') {
+                    showAlert(result.message, '실패');
+                  }
+                }}
+              />
+              <ActionButton
+                icon={<FileUp />}
+                title="백업 데이터 복구"
+                desc="JSON 백업 파일로부터 복원"
                 onClick={handleImport}
               />
               <ActionButton
                 icon={<RotateCcw />}
-                title="프로그램 초기화"
-                desc="모든 데이터가 삭제됩니다"
+                title="데이터 완전 초기화"
+                desc="모든 내역과 설정이 삭제됩니다"
                 variant="danger"
                 onClick={() => {
                   showConfirm(
@@ -207,8 +241,8 @@ function BackupConfigPanel({
   prefix
 }: any) {
   return (
-    <div className="space-y-6 bg-gray-950/30 p-8 rounded-3xl border border-gray-800/50">
-      <div className="flex justify-between items-center mb-2">
+    <div className="space-y-6 bg-gray-950/30 p-8 rounded-3xl border border-gray-800/50 shadow-inner">
+      <div className="flex justify-between items-center">
         <span
           className={`text-[10px] font-black ${colorClass} uppercase tracking-widest flex items-center gap-2`}>
           <div className={`w-2 h-2 rounded-full ${dotClass} animate-pulse`} />
@@ -223,9 +257,9 @@ function BackupConfigPanel({
         </select>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         <Input
-          label="스케줄 구성"
+          label="백업 주기 설정"
           type="text"
           value={interval.join(', ')}
           onChange={e => {
@@ -239,32 +273,40 @@ function BackupConfigPanel({
         />
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider pl-1">
-              용량 제한 ({maxSize}GB)
+          <div className="space-y-3">
+            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest pl-1">
+              용량 제한 ({maxSize}MB)
             </p>
-            <input
-              type="range"
-              min="0.1"
-              max="10"
-              step="0.1"
-              value={maxSize}
-              onChange={e =>
-                onUpdate({ [`${prefix}_max_backup_size_gb`]: parseFloat(e.target.value) })
-              }
-              className={`w-full ${prefix === 'main' ? 'accent-blue-600' : 'accent-emerald-600'}`}
-            />
+            <div className="px-1">
+              <input
+                type="range"
+                min="100"
+                max="10000"
+                step="50"
+                value={maxSize}
+                onChange={e =>
+                  onUpdate({ [`${prefix}_max_backup_size_mb`]: parseInt(e.target.value) })
+                }
+                className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-gray-800 ${
+                  prefix === 'main' ? 'accent-blue-500' : 'accent-emerald-500'
+                }`}
+              />
+              <div className="flex justify-between mt-2 text-[8px] font-black text-gray-600">
+                <span>100MB</span>
+                <span>10GB</span>
+              </div>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider pl-1">
-              자동 정리
+          <div className="space-y-3">
+            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest pl-1">
+              보관 기간
             </p>
             <select
               value={autoDelete}
               onChange={e =>
                 onUpdate({ [`${prefix}_auto_delete_months`]: parseInt(e.target.value) })
               }
-              className="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 text-xs font-bold outline-none">
+              className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-xs font-bold outline-none text-white focus:border-blue-500 transition-colors">
               <option value={0}>전체 보관</option>
               <option value={1}>1개월 후 삭제</option>
               <option value={3}>3개월 후 삭제</option>
@@ -274,8 +316,8 @@ function BackupConfigPanel({
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider pl-1 font-black">
+        <div className="space-y-2">
+          <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest pl-1">
             저장 경로
           </p>
           <div className="flex gap-2">
@@ -302,24 +344,34 @@ function CategoryList({ title, categories, onAdd, onDelete }: any) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">{title}</h4>
-        <Button variant="ghost" size="sm" onClick={onAdd} icon={<PlusCircle size={14} />}>
-          추가
+        <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+          {title}
+        </h4>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onAdd}
+          className="!text-[10px] !py-1 !px-2"
+          icon={<PlusCircle size={14} />}>
+          항목 추가
         </Button>
       </div>
       <div className="flex flex-wrap gap-2">
         {categories.map((c: any) => (
           <div
             key={c.id}
-            className="flex items-center gap-2 bg-gray-950 border border-gray-800 px-3 py-1.5 rounded-xl group hover:border-blue-500/50 transition-all">
-            <span className="text-xs font-bold text-gray-300">{c.name}</span>
+            className="flex items-center gap-2 bg-gray-900 border border-gray-800 pl-4 pr-2 py-2 rounded-2xl group hover:border-blue-500/50 transition-all shadow-sm">
+            <span className="text-xs font-bold text-white">{c.name}</span>
             <button
               onClick={() => onDelete(c.id)}
-              className="text-gray-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
-              &times;
+              className="p-1 text-gray-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500/10 rounded-lg">
+              <PlusCircle size={14} className="rotate-45" />
             </button>
           </div>
         ))}
+        {categories.length === 0 && (
+          <p className="text-[10px] text-gray-600 font-bold italic pl-1">등록된 항목이 없습니다.</p>
+        )}
       </div>
     </div>
   );

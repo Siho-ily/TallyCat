@@ -81,17 +81,35 @@ export function registerIpcHandlers() {
     })
   );
 
-  ipcMain.handle('save-category', (_event, category: Category) =>
+  ipcMain.handle('save-category', (_event, category: any) =>
     handleIpc('save-category', async () => {
       const db = await getDb();
       await db.read();
-      if (!db.data) throw new Error('DB data not initialized');
+      if (!db.data) throw new Error('DB 데이터가 초기화되지 않았습니다.');
+
+      if (!db.data.categories) {
+        db.data.categories = [...defaultData.categories];
+      }
+
+      const generateId = () => {
+        try {
+          return crypto.randomUUID();
+        } catch (e) {
+          return Date.now().toString() + Math.random().toString(36).substring(2, 9);
+        }
+      };
 
       if (category.id) {
         const index = db.data.categories.findIndex(c => c.id === category.id);
-        if (index > -1) db.data.categories[index] = category;
+        if (index > -1) {
+          db.data.categories[index] = { ...db.data.categories[index], ...category };
+        }
       } else {
-        db.data.categories.push({ ...category, id: crypto.randomUUID() });
+        db.data.categories.push({
+          id: generateId(),
+          type: category.type || 'income',
+          name: category.name || '미분류'
+        });
       }
       await db.write();
       return true;
@@ -102,7 +120,9 @@ export function registerIpcHandlers() {
     handleIpc('delete-category', async () => {
       const db = await getDb();
       await db.read();
-      if (!db.data) return false;
+      if (!db.data) throw new Error('DB 데이터가 초기화되지 않았습니다.');
+
+      if (!db.data.categories) return false;
 
       db.data.categories = db.data.categories.filter(c => c.id !== id);
       await db.write();
@@ -156,7 +176,7 @@ export function registerIpcHandlers() {
 
     const db = await getDb();
     const settings = db.data.settings;
-    const maxGB = settings.main_max_backup_size_gb || 1.0;
+    const maxMB = settings.main_max_backup_size_mb || 500;
 
     const mainPathExists = settings.main_backup_path
       ? await fs.pathExists(settings.main_backup_path)
@@ -168,7 +188,7 @@ export function registerIpcHandlers() {
     return {
       dbSize, // bytes
       freeSpace, // bytes
-      limitReached: dbSize > maxGB * 1024 * 1024 * 1024,
+      limitReached: dbSize > maxMB * 1024 * 1024,
       mainPathExists,
       subPathExists,
       mainBackupPath: settings.main_backup_path,
@@ -192,9 +212,32 @@ export function registerIpcHandlers() {
     if (format === 'json') {
       await fs.writeJson(filePath, db.data, { spaces: 2 });
     } else {
-      const worksheet = XLSX.utils.json_to_sheet(db.data.records);
+      // Create a formatted data for Excel with Korean headers and category names
+      const categories = db.data.categories || [];
+      const excelData = db.data.records.map(record => {
+        const category = categories.find(c => c.id === record.category_id);
+        return {
+          날짜: record.date,
+          유형: record.type === 'income' ? '매출' : '매입',
+          카테고리: category ? category.name : '기타',
+          금액: record.amount,
+          메모: record.note || ''
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+      // Optional: Set column widths for better readability
+      worksheet['!cols'] = [
+        { wch: 20 }, // 날짜
+        { wch: 10 }, // 유형
+        { wch: 15 }, // 카테고리
+        { wch: 12 }, // 금액
+        { wch: 30 } // 메모
+      ];
+
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Records');
+      XLSX.utils.book_append_sheet(workbook, worksheet, '매출매입내역');
       XLSX.writeFile(workbook, filePath);
     }
 

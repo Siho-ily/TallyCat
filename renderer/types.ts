@@ -21,8 +21,8 @@ export interface Settings {
   auto_backup: boolean;
   last_main_backup_date: string | null;
   last_sub_backup_date: string | null;
-  main_max_backup_size_gb: number;
-  sub_max_backup_size_gb: number;
+  main_max_backup_size_mb: number;
+  sub_max_backup_size_mb: number;
   main_backup_path: string;
   sub_backup_path: string;
   main_auto_delete_months: number;

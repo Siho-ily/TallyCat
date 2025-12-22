@@ -26,8 +26,8 @@ export interface Settings {
   auto_backup: boolean;
   last_main_backup_date: string | null;
   last_sub_backup_date: string | null;
-  main_max_backup_size_gb: number;
-  sub_max_backup_size_gb: number;
+  main_max_backup_size_mb: number;
+  sub_max_backup_size_mb: number;
   main_backup_path: string;
   sub_backup_path: string;
   main_auto_delete_months: number;
@@ -60,8 +60,8 @@ export const defaultData: Data = {
     auto_backup: true,
     last_main_backup_date: null,
     last_sub_backup_date: null,
-    main_max_backup_size_gb: 1.0,
-    sub_max_backup_size_gb: 5.0,
+    main_max_backup_size_mb: 500,
+    sub_max_backup_size_mb: 1000,
     main_backup_path: '',
     sub_backup_path: '',
     main_auto_delete_months: 3,
@@ -102,9 +102,18 @@ async function migrate(db: Low<Data>) {
       db.data.settings.last_main_backup_date = s.last_backup_date;
       db.data.settings.last_sub_backup_date = s.last_backup_date;
     }
-    if (s.max_backup_size_gb && !db.data.settings.main_max_backup_size_gb) {
-      db.data.settings.main_max_backup_size_gb = s.max_backup_size_gb;
-      db.data.settings.sub_max_backup_size_gb = s.max_backup_size_gb;
+    if (s.max_backup_size_gb && !db.data.settings.main_max_backup_size_mb) {
+      db.data.settings.main_max_backup_size_mb = Math.round(s.max_backup_size_gb * 1024);
+      db.data.settings.sub_max_backup_size_mb = Math.round(s.max_backup_size_gb * 1024);
+    }
+    // Migration: rename existing main_max_backup_size_gb to mb if it exists
+    if (s.main_max_backup_size_gb && !s.main_max_backup_size_mb) {
+      s.main_max_backup_size_mb = Math.round(s.main_max_backup_size_gb * 1024);
+      delete s.main_max_backup_size_gb;
+    }
+    if (s.sub_max_backup_size_gb && !s.sub_max_backup_size_mb) {
+      s.sub_max_backup_size_mb = Math.round(s.sub_max_backup_size_gb * 1024);
+      delete s.sub_max_backup_size_gb;
     }
     if (s.auto_delete_months && !db.data.settings.main_auto_delete_months) {
       db.data.settings.main_auto_delete_months = s.auto_delete_months;
