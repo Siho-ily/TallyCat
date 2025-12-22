@@ -26,8 +26,16 @@ export interface Settings {
   sub_max_backup_size_mb: number;
   main_backup_path: string;
   sub_backup_path: string;
-  main_auto_delete_months: number;
-  sub_auto_delete_months: number;
+  main_auto_delete_enabled: boolean;
+  main_retention_years: number;
+  main_retention_months: number;
+  main_retention_days: number;
+  main_retention_count: number;
+  sub_auto_delete_enabled: boolean;
+  sub_retention_years: number;
+  sub_retention_months: number;
+  sub_retention_days: number;
+  sub_retention_count: number;
 }
 
 export interface StorageInfo {

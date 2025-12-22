@@ -128,7 +128,11 @@ export default function SettingsPage() {
               mode={settings.main_backup_mode}
               interval={settings.main_backup_interval}
               maxSize={settings.main_max_backup_size_mb}
-              autoDelete={settings.main_auto_delete_months}
+              autoDeleteEnabled={settings.main_auto_delete_enabled}
+              retentionYears={settings.main_retention_years}
+              retentionMonths={settings.main_retention_months}
+              retentionDays={settings.main_retention_days}
+              retentionCount={settings.main_retention_count}
               path={settings.main_backup_path}
               lastDate={settings.last_main_backup_date}
               colorClass="text-blue-400"
@@ -141,7 +145,11 @@ export default function SettingsPage() {
               mode={settings.sub_backup_mode}
               interval={settings.sub_backup_interval}
               maxSize={settings.sub_max_backup_size_mb}
-              autoDelete={settings.sub_auto_delete_months}
+              autoDeleteEnabled={settings.sub_auto_delete_enabled}
+              retentionYears={settings.sub_retention_years}
+              retentionMonths={settings.sub_retention_months}
+              retentionDays={settings.sub_retention_days}
+              retentionCount={settings.sub_retention_count}
               path={settings.sub_backup_path}
               lastDate={settings.last_sub_backup_date}
               colorClass="text-emerald-400"
@@ -336,7 +344,11 @@ function BackupConfigPanel({
   mode,
   interval,
   maxSize,
-  autoDelete,
+  autoDeleteEnabled,
+  retentionYears,
+  retentionMonths,
+  retentionDays,
+  retentionCount,
   path: currentPath,
   lastDate,
   onUpdate,
@@ -346,6 +358,13 @@ function BackupConfigPanel({
 }: any) {
   const [localInterval, setLocalInterval] = React.useState(interval.join(', '));
   const [localMaxSize, setLocalMaxSize] = React.useState(maxSize);
+
+  // Granular Retention Local States
+  const [localYears, setLocalYears] = React.useState(retentionYears);
+  const [localMonths, setLocalMonths] = React.useState(retentionMonths);
+  const [localDays, setLocalDays] = React.useState(retentionDays);
+  const [localCount, setLocalCount] = React.useState(retentionCount);
+
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -356,6 +375,13 @@ function BackupConfigPanel({
   React.useEffect(() => {
     setLocalMaxSize(maxSize);
   }, [maxSize]);
+
+  React.useEffect(() => {
+    setLocalYears(retentionYears);
+    setLocalMonths(retentionMonths);
+    setLocalDays(retentionDays);
+    setLocalCount(retentionCount);
+  }, [retentionYears, retentionMonths, retentionDays, retentionCount]);
 
   const handleApply = () => {
     setError(null);
@@ -405,6 +431,24 @@ function BackupConfigPanel({
     } else {
       setLocalInterval(finalVals.join(', '));
     }
+  };
+
+  const handleMaxSizeApply = () => {
+    let val = parseInt(String(localMaxSize));
+    if (isNaN(val) || val < 10) {
+      val = 100; // Fallback to safe default
+    }
+    setLocalMaxSize(val);
+    if (val !== maxSize) {
+      onUpdate({ [`${prefix}_max_backup_size_mb`]: val });
+    }
+  };
+
+  const handleRetentionUpdate = (field: string, val: any) => {
+    let numeric = parseInt(val) || 0;
+    if (numeric < 0) numeric = 0;
+
+    onUpdate({ [`${prefix}_retention_${field}`]: numeric });
   };
 
   const formattedDate = lastDate
@@ -476,45 +520,88 @@ function BackupConfigPanel({
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest pl-1">
-              용량 제한 ({localMaxSize}MB)
-            </p>
-            <div className="px-1">
+          <div className="space-y-2">
+            <Input
+              label="용량 제한 (MB)"
+              type="text"
+              value={localMaxSize}
+              onChange={e => {
+                const val = e.target.value.replace(/[^0-9]/g, '');
+                setLocalMaxSize(val);
+              }}
+              onBlur={handleMaxSizeApply}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  handleMaxSizeApply();
+                  (e.target as any).blur();
+                }
+              }}
+              placeholder="예: 100"
+              desc="지정한 용량이 넘어가면 게이지가 붉은색으로 변합니다."
+            />
+          </div>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center pr-2">
+              <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest pl-1">
+                자동 삭제 정책
+              </span>
               <input
-                type="range"
-                min="100"
-                max="10000"
-                step="50"
-                value={localMaxSize}
-                onChange={e => setLocalMaxSize(parseInt(e.target.value))}
-                onMouseUp={() => onUpdate({ [`${prefix}_max_backup_size_mb`]: localMaxSize })}
-                className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-gray-800 ${
-                  prefix === 'main' ? 'accent-blue-500' : 'accent-emerald-500'
-                }`}
+                type="checkbox"
+                checked={autoDeleteEnabled}
+                onChange={e => onUpdate({ [`${prefix}_auto_delete_enabled`]: e.target.checked })}
+                className="w-4 h-4 accent-rose-500 cursor-pointer"
               />
-              <div className="flex justify-between mt-2 text-[8px] font-black text-gray-600">
-                <span>100MB</span>
-                <span>10GB</span>
+            </div>
+            <div
+              className={`space-y-3 transition-all ${
+                autoDeleteEnabled ? 'opacity-100' : 'opacity-30 pointer-events-none grayscale'
+              }`}>
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-1">
+                  <span className="text-[8px] font-black text-gray-700 uppercase pl-1">년</span>
+                  <input
+                    type="number"
+                    value={localYears}
+                    onChange={e => setLocalYears(e.target.value)}
+                    onBlur={e => handleRetentionUpdate('years', e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-xl px-2 py-1.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <span className="text-[8px] font-black text-gray-700 uppercase pl-1">월</span>
+                  <input
+                    type="number"
+                    value={localMonths}
+                    onChange={e => setLocalMonths(e.target.value)}
+                    onBlur={e => handleRetentionUpdate('months', e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-xl px-2 py-1.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <span className="text-[8px] font-black text-gray-700 uppercase pl-1">일</span>
+                  <input
+                    type="number"
+                    value={localDays}
+                    onChange={e => setLocalDays(e.target.value)}
+                    onBlur={e => handleRetentionUpdate('days', e.target.value)}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-xl px-2 py-1.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[8px] font-black text-gray-700 uppercase pl-1">
+                  최대 보관 개수
+                </span>
+                <input
+                  type="number"
+                  value={localCount}
+                  onChange={e => setLocalCount(e.target.value)}
+                  onBlur={e => handleRetentionUpdate('count', e.target.value)}
+                  placeholder="무제한: 0"
+                  className="w-full bg-gray-900 border border-gray-800 rounded-xl px-3 py-1.5 text-xs font-bold text-white outline-none focus:border-blue-500"
+                />
               </div>
             </div>
-          </div>
-          <div className="space-y-3">
-            <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest pl-1">
-              보관 기간
-            </p>
-            <select
-              value={autoDelete}
-              onChange={e =>
-                onUpdate({ [`${prefix}_auto_delete_months`]: parseInt(e.target.value) })
-              }
-              className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-xs font-bold outline-none text-white focus:border-blue-500 transition-colors">
-              <option value={0}>전체 보관</option>
-              <option value={1}>1개월 후 삭제</option>
-              <option value={3}>3개월 후 삭제</option>
-              <option value={6}>6개월 후 삭제</option>
-              <option value={12}>12개월 후 삭제</option>
-            </select>
           </div>
         </div>
 

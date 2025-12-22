@@ -86,8 +86,24 @@ export async function runBackupService() {
   }
 
   // 3. Run individual cleanups
-  await runCleanupService('main', settings.main_backup_path, settings.main_auto_delete_months);
-  await runCleanupService('sub', settings.sub_backup_path, settings.sub_auto_delete_months);
+  await runCleanupService(
+    'main',
+    settings.main_backup_path,
+    settings.main_auto_delete_enabled,
+    settings.main_retention_years,
+    settings.main_retention_months,
+    settings.main_retention_days,
+    settings.main_retention_count
+  );
+  await runCleanupService(
+    'sub',
+    settings.sub_backup_path,
+    settings.sub_auto_delete_enabled,
+    settings.sub_retention_years,
+    settings.sub_retention_months,
+    settings.sub_retention_days,
+    settings.sub_retention_count
+  );
 }
 
 async function performBackup(targetPath: string, label: string): Promise<boolean> {
@@ -113,28 +129,72 @@ async function performBackup(targetPath: string, label: string): Promise<boolean
   }
 }
 
-async function runCleanupService(label: string, backupPath: string, months: number) {
-  if (months <= 0 || !backupPath) return;
-
-  const cutoffDate = DateTime.now().minus({ months: months });
+async function runCleanupService(
+  label: string,
+  backupPath: string,
+  enabled: boolean,
+  years: number,
+  months: number,
+  days: number,
+  maxCount: number
+) {
+  // If explicitly disabled, do nothing
+  if (!enabled || !backupPath) return;
 
   try {
     if (!(await fs.pathExists(backupPath))) return;
 
     const files = await fs.readdir(backupPath);
-    // Only clean files with the matching label to avoid cross-cleanup if paths are same
+    // Only clean files with the matching label
     const backupFiles = files.filter(
       f => f.startsWith(`db_backup_${label}_`) && f.endsWith('.json')
     );
 
-    for (const file of backupFiles) {
-      const filePath = path.join(backupPath, file);
-      const stats = await fs.stat(filePath);
-      const fileDate = DateTime.fromJSDate(stats.mtime);
+    if (backupFiles.length === 0) return;
 
-      if (fileDate < cutoffDate) {
-        await fs.remove(filePath);
-        console.log(`Auto-deleted old ${label} backup: ${file}`);
+    // Get stats for all files to sort by time
+    const fileStats = await Promise.all(
+      backupFiles.map(async f => {
+        const filePath = path.join(backupPath, f);
+        const stats = await fs.stat(filePath);
+        return { name: f, path: filePath, mtime: DateTime.fromJSDate(stats.mtime) };
+      })
+    );
+
+    // Sort by modification time (descending: newest first)
+    fileStats.sort((a, b) => b.mtime.toMillis() - a.mtime.toMillis());
+
+    // 1. Time-based cleanup (Delete files older than the retention period)
+    const cutoffDate = DateTime.now().minus({
+      years: years || 0,
+      months: months || 0,
+      days: days || 0
+    });
+
+    // We only perform time-based cleanup if at least one period unit is set
+    const hasTimeRetention = years > 0 || months > 0 || days > 0;
+
+    let remainingAfterTime: typeof fileStats = [];
+
+    if (hasTimeRetention) {
+      for (const file of fileStats) {
+        if (file.mtime < cutoffDate) {
+          await fs.remove(file.path);
+          console.log(`Auto-deleted old ${label} backup (time): ${file.name}`);
+        } else {
+          remainingAfterTime.push(file);
+        }
+      }
+    } else {
+      remainingAfterTime = [...fileStats];
+    }
+
+    // 2. Count-based cleanup (Keep only the N most recent files)
+    if (maxCount > 0 && remainingAfterTime.length > maxCount) {
+      const filesToDelete = remainingAfterTime.slice(maxCount);
+      for (const file of filesToDelete) {
+        await fs.remove(file.path);
+        console.log(`Auto-deleted old ${label} backup (count): ${file.name}`);
       }
     }
   } catch (error) {

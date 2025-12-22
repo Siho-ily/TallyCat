@@ -31,8 +31,16 @@ export interface Settings {
   sub_max_backup_size_mb: number;
   main_backup_path: string;
   sub_backup_path: string;
-  main_auto_delete_months: number;
-  sub_auto_delete_months: number;
+  main_auto_delete_enabled: boolean;
+  main_retention_years: number;
+  main_retention_months: number;
+  main_retention_days: number;
+  main_retention_count: number;
+  sub_auto_delete_enabled: boolean;
+  sub_retention_years: number;
+  sub_retention_months: number;
+  sub_retention_days: number;
+  sub_retention_count: number;
 }
 
 export interface Data {
@@ -44,14 +52,8 @@ export interface Data {
 export const defaultData: Data = {
   records: [],
   categories: [
-    { id: '1', type: 'income', name: '커트', is_active: true },
-    { id: '2', type: 'income', name: '염색', is_active: true },
-    { id: '3', type: 'income', name: '펌', is_active: true },
-    { id: '4', type: 'expense', name: '재료비', is_active: true },
-    { id: '5', type: 'expense', name: '월세', is_active: true },
-    { id: '6', type: 'expense', name: '전기세', is_active: true },
-    { id: '7', type: 'income', name: '기타', is_active: true },
-    { id: '8', type: 'expense', name: '기타', is_active: true }
+    { id: '1', type: 'income', name: '기타', is_active: true },
+    { id: '2', type: 'expense', name: '기타', is_active: true }
   ],
   settings: {
     main_backup_mode: 'interval',
@@ -61,12 +63,20 @@ export const defaultData: Data = {
     auto_backup: true,
     last_main_backup_date: null,
     last_sub_backup_date: null,
-    main_max_backup_size_mb: 500,
-    sub_max_backup_size_mb: 1000,
+    main_max_backup_size_mb: 100,
+    sub_max_backup_size_mb: 100,
     main_backup_path: '',
     sub_backup_path: '',
-    main_auto_delete_months: 3,
-    sub_auto_delete_months: 12
+    main_auto_delete_enabled: true,
+    main_retention_years: 0,
+    main_retention_months: 3,
+    main_retention_days: 0,
+    main_retention_count: 50,
+    sub_auto_delete_enabled: true,
+    sub_retention_years: 1,
+    sub_retention_months: 0,
+    sub_retention_days: 0,
+    sub_retention_count: 100
   }
 };
 
@@ -122,14 +132,22 @@ async function migrate(db: Low<Data>) {
       s.sub_max_backup_size_mb = Math.round(s.sub_max_backup_size_gb * 1024);
       delete s.sub_max_backup_size_gb;
     }
-    if (s.auto_delete_months && !db.data.settings.main_auto_delete_months) {
-      db.data.settings.main_auto_delete_months = s.auto_delete_months;
-      db.data.settings.sub_auto_delete_months = s.auto_delete_months;
+    // Migration for retention policy
+    if (s.auto_delete_months) {
+      db.data.settings.main_retention_months = s.auto_delete_months;
+      db.data.settings.sub_retention_months = s.auto_delete_months;
+    }
+    // Handle partial development versions if they existed
+    if ((s as any).main_auto_delete_months) {
+      db.data.settings.main_retention_months = (s as any).main_auto_delete_months;
+    }
+    if ((s as any).sub_auto_delete_months) {
+      db.data.settings.sub_retention_months = (s as any).sub_auto_delete_months;
     }
 
     // Default Paths (Migration for older versions)
     const docsPath = app.getPath('documents');
-    const defaultBase = path.join(docsPath, 'SPM');
+    const defaultBase = path.join(docsPath, 'SPMS');
 
     // Ensure paths are independent and not empty strings
     if (!db.data.settings.main_backup_path || db.data.settings.main_backup_path.trim() === '') {
