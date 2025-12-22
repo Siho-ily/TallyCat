@@ -430,7 +430,7 @@ export default function SettingsPage() {
                 onClick={handleImportExcel}
                 className="w-full flex items-center justify-center gap-3 p-5 bg-emerald-600/10 border border-emerald-500/20 rounded-3xl hover:bg-emerald-600/20 hover:border-emerald-500/40 transition-all group text-emerald-400 font-black text-sm">
                 <FileUp size={20} className="group-hover:translate-y-[-2px] transition-transform" />
-                엑셀 데이터 일괄 가져오기 (이사하기)
+                엑셀 데이터 일괄 가져오기
               </button>
             </div>
           </section>
