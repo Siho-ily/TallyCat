@@ -20,7 +20,7 @@ export default function GuidePage() {
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
       <PageHeader
         title="사용자 가이드"
-        description="HairShop Sales Manager를 처음 사용하시나요? 주요 기능과 활용 팁을 안내해 드립니다."
+        description="SPMS (Sales and Purchase Management System)를 처음 사용하시나요? 주요 기능과 활용 팁을 안내해 드립니다."
         icon={<HelpCircle />}
       />
 
@@ -115,7 +115,7 @@ export default function GuidePage() {
               </h4>
               <p className="text-xs text-gray-500 leading-relaxed">
                 꾸준히 기록된 데이터는 매장의 월간 트렌드와 효자 품목을 분석하는 가장 강력한 무기가
-                됩니다. HairShop Sales Manager와 함께 체계적인 매장 관리를 시작해보세요.
+                됩니다. SPMS와 함께 체계적인 매장 관리를 시작해보세요.
               </p>
             </div>
           </div>

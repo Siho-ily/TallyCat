@@ -4,8 +4,8 @@ import Layout from '../components/layout/Layout';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'HAIRSHOP - Sales & Backup Manager',
-  description: 'Offline sales and backup management for hairshops'
+  title: 'SPMS - Sales and Purchase Management System',
+  description: 'Offline sales and purchase management system'
 };
 
 import { DataProvider } from '../context/DataContext';
