@@ -4,6 +4,7 @@ import serve from 'electron-serve';
 import { createWindow } from './helpers';
 import { registerIpcHandlers } from './ipcHandlers';
 import { runBackupService } from './backupService';
+import { getDb } from './db';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -15,6 +16,28 @@ if (isProd) {
 
 (async () => {
   await app.whenReady();
+
+  // 백업일이 null이면 현재 시간으로 업데이트
+  async function updateBackupDatesIfNull() {
+    const db = await getDb();
+    const now = new Date().toISOString();
+    let updated = false;
+    if (db.data?.settings) {
+      if (!db.data.settings.last_main_backup_date) {
+        db.data.settings.last_main_backup_date = now;
+        updated = true;
+      }
+      if (!db.data.settings.last_sub_backup_date) {
+        db.data.settings.last_sub_backup_date = now;
+        updated = true;
+      }
+      if (updated) {
+        await db.write();
+      }
+    }
+  }
+
+  await updateBackupDatesIfNull();
 
   console.log('App ready. Registering IPC handlers...');
   registerIpcHandlers();

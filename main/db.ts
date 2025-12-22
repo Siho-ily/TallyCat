@@ -123,7 +123,7 @@ async function migrate(db: Low<Data>) {
 
     // Default Paths (Migration for older versions)
     const docsPath = app.getPath('documents');
-    const defaultBase = path.join(docsPath, 'HairShop_Backups');
+    const defaultBase = path.join(docsPath, 'SPMS_Backups');
 
     // Ensure paths are independent and not empty strings
     if (!db.data.settings.main_backup_path || db.data.settings.main_backup_path.trim() === '') {
@@ -136,6 +136,15 @@ async function migrate(db: Low<Data>) {
 
     // Final Merge to ensure all keys from defaultData.settings exist
     db.data.settings = { ...defaultData.settings, ...db.data.settings };
+
+    // last_main_backup_date, last_sub_backup_date가 null이면 현재 시간으로 초기화
+    const now = new Date().toISOString();
+    if (db.data.settings.last_main_backup_date === null) {
+      db.data.settings.last_main_backup_date = now;
+    }
+    if (db.data.settings.last_sub_backup_date === null) {
+      db.data.settings.last_sub_backup_date = now;
+    }
   }
 
   await db.write();
