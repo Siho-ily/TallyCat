@@ -11,6 +11,8 @@ interface RecordTableProps {
   paymentMethods: PaymentMethod[];
   onRecordClick: (record: Record) => void;
   netProfit?: number;
+  totalIncome?: number;
+  totalExpense?: number;
   showFooter?: boolean;
 }
 
@@ -20,8 +22,25 @@ export default function RecordTable({
   paymentMethods,
   onRecordClick,
   netProfit = 0,
+  totalIncome,
+  totalExpense,
   showFooter = true
 }: RecordTableProps) {
+  // If totals aren't provided explicitly, calculate from the records prop (fallback)
+  const displayIncome =
+    totalIncome !== undefined
+      ? totalIncome
+      : records.filter(r => r.type === 'income').reduce((s, r) => s + r.amount, 0);
+
+  const displayExpense =
+    totalExpense !== undefined
+      ? totalExpense
+      : records.filter(r => r.type === 'expense').reduce((s, r) => s + r.amount, 0);
+
+  const displayNetProfit =
+    totalIncome !== undefined && totalExpense !== undefined
+      ? totalIncome - totalExpense
+      : netProfit;
   return (
     <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl overflow-hidden shadow-xl animate-in fade-in duration-300">
       <div className="overflow-x-auto">
@@ -86,12 +105,7 @@ export default function RecordTable({
                         필터 내 매출
                       </span>
                       <span className="text-sm font-black text-emerald-400">
-                        +
-                        {records
-                          .filter(r => r.type === 'income')
-                          .reduce((s, r) => s + r.amount, 0)
-                          .toLocaleString()}
-                        원
+                        +{displayIncome.toLocaleString()}원
                       </span>
                     </div>
                     <div className="flex flex-col gap-1">
@@ -99,12 +113,7 @@ export default function RecordTable({
                         필터 내 매입
                       </span>
                       <span className="text-sm font-black text-rose-400">
-                        -
-                        {records
-                          .filter(r => r.type === 'expense')
-                          .reduce((s, r) => s + r.amount, 0)
-                          .toLocaleString()}
-                        원
+                        -{displayExpense.toLocaleString()}원
                       </span>
                     </div>
                   </div>
@@ -116,10 +125,10 @@ export default function RecordTable({
                     </span>
                     <span
                       className={`text-xl font-black ${
-                        netProfit >= 0 ? 'text-blue-400' : 'text-rose-400'
+                        displayNetProfit >= 0 ? 'text-blue-400' : 'text-rose-400'
                       }`}>
-                      {netProfit >= 0 ? '+' : ''}
-                      {netProfit.toLocaleString()}원
+                      {displayNetProfit >= 0 ? '+' : ''}
+                      {displayNetProfit.toLocaleString()}원
                     </span>
                   </div>
                 </td>

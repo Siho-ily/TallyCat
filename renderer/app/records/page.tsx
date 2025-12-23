@@ -186,7 +186,8 @@ export default function RecordsPage() {
               setSelectedRecord(record);
               setIsDetailModalOpen(true);
             }}
-            netProfit={totals.income - totals.expense}
+            totalIncome={totals.income}
+            totalExpense={totals.expense}
           />
           <Pagination
             currentPage={currentPage}
