@@ -249,8 +249,8 @@ export default function CostAnalysis({ records, categories, targetMonth }: CostA
                           <div
                             className={`w-1.5 h-3 rounded-sm ${
                               row.costType === 'purchase'
-                                ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]'
-                                : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
+                                ? 'bg-amber-500 dark:bg-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
+                                : 'bg-rose-500 dark:bg-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
                             }`}
                           />
                         )}
@@ -307,16 +307,16 @@ export default function CostAnalysis({ records, categories, targetMonth }: CostA
                       <div
                         className={`absolute inset-y-0 left-0 transition-all duration-1000 ease-out z-0 ${
                           isTotal
-                            ? 'bg-blue-500/50 dark:bg-blue-400/40'
+                            ? 'bg-blue-500/50 dark:bg-blue-300'
                             : row.costType === 'purchase' || row.id.includes('purchase')
-                            ? 'bg-orange-500/70 dark:bg-orange-400/60'
-                            : 'bg-rose-500/70 dark:bg-rose-400/60'
+                            ? 'bg-amber-500/70 dark:bg-amber-400'
+                            : 'bg-rose-500/70 dark:bg-rose-400'
                         }`}
                         style={{ width: `${Math.min(100, share)}%` }}
                       />
                       <span
                         className={`relative z-10 px-6 py-4 block text-xs font-black ${
-                          isTotal ? 'text-slate-900 dark:text-white' : 'text-slate-500'
+                          isTotal ? 'text-slate-300 dark:text-white' : 'text-slate-100'
                         }`}>
                         {share.toFixed(1)}%
                       </span>

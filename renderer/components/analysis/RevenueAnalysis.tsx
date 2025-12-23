@@ -331,8 +331,8 @@ export default function RevenueAnalysis({
                     <div
                       className={`absolute inset-y-0 left-0 transition-all duration-1000 ease-out z-0 ${
                         row.isTotal
-                          ? 'bg-blue-500/50 dark:bg-blue-400/40'
-                          : 'bg-blue-500/70 dark:bg-blue-400/60'
+                          ? 'bg-blue-500/50 dark:bg-blue-300/40'
+                          : 'bg-blue-500/70 dark:bg-blue-400/50'
                       }`}
                       style={{ width: `${Math.min(100, row.share)}%` }}
                     />
