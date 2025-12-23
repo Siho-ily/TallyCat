@@ -47,11 +47,16 @@ export default function RecordFormModal({
         note: editingRecord.note
       });
     } else {
+      const type = initialData?.type || 'income';
+      const filteredCategories = categories.filter(c => c.is_active !== false && c.type === type);
+      // Only pick a default if it's explicitly marked; otherwise, leave empty
+      const defaultCategory = filteredCategories.find(c => c.is_default);
+
       setFormData({
-        type: initialData?.type || 'income',
-        category_id: initialData?.category_id || categories[0]?.id || '',
+        type: type,
+        category_id: initialData?.category_id || defaultCategory?.id || '',
         payment_method_id: initialData?.payment_method_id || defaultPM?.id || '',
-        amount: initialData?.amount || 0,
+        amount: initialData?.amount || defaultCategory?.default_amount || 0,
         date: initialData?.date || DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
         note: initialData?.note || ''
       });
@@ -119,7 +124,15 @@ export default function RecordFormModal({
               formData.type === 'income' ? 'bg-emerald-500 hover:bg-emerald-400' : ''
             }`}
             onClick={() => {
-              setFormData({ ...formData, type: 'income' });
+              const defaultCat = categories.find(
+                c => c.is_active !== false && c.type === 'income' && c.is_default
+              );
+              setFormData({
+                ...formData,
+                type: 'income',
+                category_id: defaultCat?.id || '',
+                amount: defaultCat?.default_amount || formData.amount
+              });
             }}>
             매출
           </Button>
@@ -130,7 +143,15 @@ export default function RecordFormModal({
               formData.type === 'expense' ? 'bg-rose-500 hover:bg-rose-400' : ''
             }`}
             onClick={() => {
-              setFormData({ ...formData, type: 'expense' });
+              const defaultCat = categories.find(
+                c => c.is_active !== false && c.type === 'expense' && c.is_default
+              );
+              setFormData({
+                ...formData,
+                type: 'expense',
+                category_id: defaultCat?.id || '',
+                amount: defaultCat?.default_amount || formData.amount
+              });
             }}>
             매입
           </Button>
@@ -142,11 +163,26 @@ export default function RecordFormModal({
             </label>
             <select
               value={formData.category_id}
-              onChange={e => setFormData({ ...formData, category_id: e.target.value })}
+              onChange={e => {
+                const catId = e.target.value;
+                const category = categories.find(c => c.id === catId);
+                const newData = { ...formData, category_id: catId };
+
+                // 카테고리 선택 시 기본 금액을 즉시 반영
+                if (
+                  category &&
+                  typeof category.default_amount === 'number' &&
+                  category.default_amount > 0
+                ) {
+                  newData.amount = category.default_amount;
+                }
+
+                setFormData(newData);
+              }}
               className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl px-5 py-3.5 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/40 outline-none transition-all appearance-none cursor-pointer">
               <option value="">미지정</option>
               {categories
-                .filter(c => (c as any).is_active !== false)
+                .filter(c => c.is_active !== false && c.type === formData.type)
                 .map(c => (
                   <option key={c.id} value={c.id}>
                     {c.name}

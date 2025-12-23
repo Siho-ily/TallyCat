@@ -11,7 +11,10 @@ export interface Record {
 export interface Category {
   id: string;
   name: string;
+  type: 'income' | 'expense';
   is_active: boolean;
+  is_default?: boolean;
+  default_amount?: number;
 }
 
 export interface PaymentMethod {

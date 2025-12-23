@@ -231,9 +231,7 @@ export default function RecordFilterBar({
               </option>
               {categories
                 .filter(
-                  c =>
-                    (filterType === 'all' || (c as any).type === filterType) &&
-                    (c as any).is_active !== false
+                  c => (filterType === 'all' || c.type === filterType) && c.is_active !== false
                 )
                 .map(cat => (
                   <option

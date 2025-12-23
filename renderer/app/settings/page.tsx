@@ -7,7 +7,7 @@ import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
 import PageHeader from '../../components/ui/PageHeader';
 import Card from '../../components/ui/Card';
-import { Settings } from '../../types';
+import { Settings, Category } from '../../types';
 
 // Refactored Components
 import BackupSection from '../../components/settings/BackupSection';
@@ -72,18 +72,23 @@ export default function SettingsPage() {
     );
   };
 
+  const handleSaveCategory = async (category: Partial<Category>) => {
+    try {
+      const success = await (window as any).ipc.invoke('save-category', category);
+      if (success) {
+        await refreshData();
+      } else {
+        showAlert('카테고리 저장에 실패했습니다.', '오류');
+      }
+    } catch (error) {
+      console.error('Failed to save category:', error);
+      showAlert('카테고리 저장 중 오류가 발생했습니다.', '오류');
+    }
+  };
+
   const handleCategoryAction = async (action: 'add' | 'delete', id?: string) => {
     try {
-      if (action === 'add') {
-        showPrompt('새 카테고리 이름을 입력하세요:', '카테고리 추가', async name => {
-          if (name && name.trim()) {
-            const success = await (window as any).ipc.invoke('save-category', {
-              name: name.trim()
-            });
-            if (success) await refreshData();
-          }
-        });
-      } else if (action === 'delete' && id) {
+      if (action === 'delete' && id) {
         showConfirm(
           '정말 이 카테고리를 삭제하시겠습니까? 삭제 후에도 기존 내역에는 카테고리 정보가 유지되지만, 목록에서는 더 이상 보이지 않습니다.',
           '카테고리 삭제 확인',
@@ -97,20 +102,6 @@ export default function SettingsPage() {
       console.error('Category action failed:', error);
       const msg = error?.message || '카테고리 수정 중 오류가 발생했습니다.';
       showAlert(msg, '오류');
-    }
-  };
-
-  const handleRenameCategory = async (id: string, newName: string) => {
-    try {
-      const success = await (window as any).ipc.invoke('save-category', { id, name: newName });
-      if (success) {
-        await refreshData();
-      } else {
-        showAlert('카테고리 수정에 실패했습니다.', '오류');
-      }
-    } catch (error) {
-      console.error('Failed to rename category:', error);
-      showAlert('카테고리 이름 변경 중 오류가 발생했습니다.', '오류');
     }
   };
 
@@ -244,7 +235,7 @@ export default function SettingsPage() {
             <CategorySection
               categories={categories}
               onAction={handleCategoryAction}
-              onRename={handleRenameCategory}
+              onSave={handleSaveCategory}
             />
             <PaymentMethodSection
               paymentMethods={paymentMethods}

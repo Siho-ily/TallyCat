@@ -16,7 +16,10 @@ export interface Record {
 export interface Category {
   id: string;
   name: string;
+  type: 'income' | 'expense';
   is_active: boolean;
+  is_default?: boolean;
+  default_amount?: number;
 }
 
 export interface PaymentMethod {
@@ -102,23 +105,27 @@ async function migrate(db: Low<Data>) {
     const categoryMap = new Map<string, Category>();
     const idMapping = new Map<string, string>(); // old id -> new id
 
-    // Merge categories with the same name
+    // Merge categories with the same name and assign types
     for (const oldCat of oldCategories) {
       const name = oldCat.name;
       const isActive = typeof oldCat.is_active === 'undefined' ? true : oldCat.is_active;
+      const type = oldCat.type || 'income'; // Default to income for existing categories
+      const key = `${name}_${type}`;
 
-      if (categoryMap.has(name)) {
+      if (categoryMap.has(key)) {
         // Duplicate found - map old id to existing category id
-        const existingCat = categoryMap.get(name)!;
+        const existingCat = categoryMap.get(key)!;
         idMapping.set(oldCat.id, existingCat.id);
       } else {
-        // New category name - create new category without type
+        // New category entry
         const newCat: Category = {
           id: oldCat.id,
           name: name,
-          is_active: isActive
+          type: type as 'income' | 'expense',
+          is_active: isActive,
+          default_amount: oldCat.default_amount
         };
-        categoryMap.set(name, newCat);
+        categoryMap.set(key, newCat);
         idMapping.set(oldCat.id, newCat.id);
       }
     }

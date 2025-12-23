@@ -102,13 +102,30 @@ export function registerIpcHandlers() {
       if (category.id) {
         const index = db.data.categories.findIndex(c => c.id === category.id);
         if (index > -1) {
+          // If this category is being set as default, unset others of same type
+          if (category.is_default) {
+            const type = category.type || db.data.categories[index].type;
+            db.data.categories.forEach(c => {
+              if (c.type === type) c.is_default = false;
+            });
+          }
           db.data.categories[index] = { ...db.data.categories[index], ...category };
         }
       } else {
+        const type = category.type || 'income';
+        // If new category is default, unset others of same type
+        if (category.is_default) {
+          db.data.categories.forEach(c => {
+            if (c.type === type) c.is_default = false;
+          });
+        }
         db.data.categories.push({
           id: generateId(),
           name: category.name || '미분류',
-          is_active: true
+          type,
+          is_active: true,
+          is_default: !!category.is_default,
+          default_amount: category.default_amount
         });
       }
       await db.write();
@@ -487,6 +504,7 @@ export function registerIpcHandlers() {
             category = {
               id: crypto.randomUUID(),
               name: catNameClean,
+              type: type, // Assign current record type
               is_active: true
             };
             categories.push(category);
