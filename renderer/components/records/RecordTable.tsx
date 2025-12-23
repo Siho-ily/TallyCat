@@ -3,11 +3,12 @@
 import React from 'react';
 import Badge from '../ui/Badge';
 import EmptyState from '../ui/EmptyState';
-import { Record, Category } from '../../types';
+import { Record, Category, PaymentMethod } from '../../types';
 
 interface RecordTableProps {
   records: Record[];
   categories: Category[];
+  paymentMethods: PaymentMethod[];
   onRecordClick: (record: Record) => void;
   netProfit?: number;
   showFooter?: boolean;
@@ -16,6 +17,7 @@ interface RecordTableProps {
 export default function RecordTable({
   records,
   categories,
+  paymentMethods,
   onRecordClick,
   netProfit = 0,
   showFooter = true
@@ -29,6 +31,7 @@ export default function RecordTable({
               <th className="px-6 py-5">날짜 / 시간</th>
               <th className="px-6 py-5">유형</th>
               <th className="px-6 py-5">카테고리</th>
+              <th className="px-6 py-5">결제방식</th>
               <th className="px-6 py-5 text-right">금액</th>
             </tr>
           </thead>
@@ -52,6 +55,10 @@ export default function RecordTable({
                 <td className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300">
                   {categories.find(c => c.id === record.category_id)?.name || '미지정'}
                 </td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300">
+                  {(paymentMethods || []).find(pm => pm.id === record.payment_method_id)?.name ||
+                    '미지정'}
+                </td>
                 <td
                   className={`px-6 py-4 text-right font-black text-sm ${
                     record.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
@@ -63,7 +70,7 @@ export default function RecordTable({
             ))}
             {records.length === 0 && (
               <tr>
-                <td colSpan={4}>
+                <td colSpan={5}>
                   <EmptyState />
                 </td>
               </tr>
@@ -72,11 +79,11 @@ export default function RecordTable({
           {showFooter && records.length > 0 && (
             <tfoot className="bg-gray-200 dark:bg-gray-800/50 border-t border-gray-300 dark:border-gray-700">
               <tr>
-                <td colSpan={2} className="px-6 py-4">
+                <td colSpan={3} className="px-6 py-4">
                   <div className="flex gap-10">
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                        조회 내 매출
+                        필터 내 매출
                       </span>
                       <span className="text-sm font-black text-emerald-400">
                         +
@@ -89,7 +96,7 @@ export default function RecordTable({
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                        조회 내 매입
+                        필터 내 매입
                       </span>
                       <span className="text-sm font-black text-rose-400">
                         -

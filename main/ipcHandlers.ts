@@ -477,30 +477,64 @@ export function registerIpcHandlers() {
           type = 'income';
         }
 
-        // 4. Category Matching/Creation (no type distinction)
+        // 4. Category Handling
         let catNameClean = String(catName).trim();
-        let category = categories.find(c => c.name === catNameClean);
+        let categoryId = ''; // Default to "미지정" (empty string ID)
 
-        if (!category) {
-          category = {
-            id: crypto.randomUUID(),
-            name: catNameClean,
-            is_active: true
-          };
-          categories.push(category);
+        if (catNameClean && catNameClean !== '미지정') {
+          let category = categories.find(c => c.name === catNameClean);
+          if (!category) {
+            category = {
+              id: crypto.randomUUID(),
+              name: catNameClean,
+              is_active: true
+            };
+            categories.push(category);
+          }
+          categoryId = category.id;
         }
 
-        // 5. Payment Method (default to 카드)
-        const defaultPaymentMethod =
-          db.data.payment_methods.find(pm => pm.name === '카드') || db.data.payment_methods[0];
+        // 5. Payment Method Handling
+        const paymentMethods = db.data.payment_methods;
+        const rawPm = findValue(['결제', '방식', 'payment', 'method', '수단']);
+        let paymentMethodId = ''; // Default to "미지정" (empty string ID)
+
+        if (rawPm) {
+          const pmNameClean = String(rawPm).trim();
+          if (pmNameClean && pmNameClean !== '미지정') {
+            // 1. Try exact name match
+            let matchedPm = paymentMethods.find(pm => pm.name === pmNameClean);
+
+            // 2. Keyword matching for common types (Cash/Card)
+            if (!matchedPm) {
+              const pmStrLower = pmNameClean.toLowerCase();
+              if (pmStrLower.includes('cash') || pmStrLower.includes('현금')) {
+                matchedPm = paymentMethods.find(pm => pm.name.includes('현금'));
+              } else if (pmStrLower.includes('card') || pmStrLower.includes('카드')) {
+                matchedPm = paymentMethods.find(pm => pm.name.includes('카드'));
+              }
+            }
+
+            // 3. Create new one if still no match
+            if (!matchedPm) {
+              matchedPm = {
+                id: crypto.randomUUID(),
+                name: pmNameClean,
+                is_active: true
+              };
+              paymentMethods.push(matchedPm);
+            }
+            paymentMethodId = matchedPm.id;
+          }
+        }
 
         // 6. Create Record
         db.data.records.unshift({
           id: crypto.randomUUID(),
           date: dateStr,
           type: type,
-          category_id: category.id,
-          payment_method_id: defaultPaymentMethod.id,
+          category_id: categoryId,
+          payment_method_id: paymentMethodId,
           amount: amount,
           note: String(note)
         });

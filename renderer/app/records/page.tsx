@@ -17,7 +17,7 @@ import Pagination from '../../components/ui/Pagination';
 import { Button } from '../../components/ui/InputControls';
 
 export default function RecordsPage() {
-  const { records, categories, loading, refreshData } = useData();
+  const { records, categories, paymentMethods, loading, refreshData } = useData();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   // Filtering states
@@ -181,6 +181,7 @@ export default function RecordsPage() {
           <RecordTable
             records={paginatedRecords}
             categories={categories}
+            paymentMethods={paymentMethods}
             onRecordClick={record => {
               setSelectedRecord(record);
               setIsDetailModalOpen(true);

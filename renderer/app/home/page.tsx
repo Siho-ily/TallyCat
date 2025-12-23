@@ -16,7 +16,7 @@ import StatsSection from '../../components/home/StatsSection';
 import RecentRecordsSection from '../../components/home/RecentRecordsSection';
 
 export default function HomePage() {
-  const { records, categories, loading, refreshData } = useData();
+  const { records, categories, paymentMethods, loading, refreshData } = useData();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
@@ -82,6 +82,7 @@ export default function HomePage() {
       <RecentRecordsSection
         records={recentRecords}
         categories={categories}
+        paymentMethods={paymentMethods}
         onRecordClick={r => {
           setSelectedRecord(r);
           setIsDetailOpen(true);

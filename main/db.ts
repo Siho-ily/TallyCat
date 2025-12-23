@@ -126,16 +126,35 @@ async function migrate(db: Low<Data>) {
     // Update categories array
     db.data.categories = Array.from(categoryMap.values());
 
-    // Update all records to use new category IDs and add payment_method_id
-    db.data.records = db.data.records.map(record => {
-      const newCategoryId = idMapping.get(record.category_id) || record.category_id;
-      return {
+    // Update records for category ID mapping ONLY if we did mapping
+    if (idMapping.size > 0) {
+      db.data.records = db.data.records.map(record => ({
         ...record,
-        category_id: newCategoryId,
-        // Add payment_method_id if missing
-        payment_method_id: record.payment_method_id || defaultPaymentMethod.id
-      };
+        category_id: idMapping.get(record.category_id) || record.category_id
+      }));
+    }
+  }
+
+  // Always ensure records have payment_method_id
+  // Get default payment method (카드) again to be sure
+  const defaultPM =
+    db.data.payment_methods.find(pm => pm.name === '카드') || db.data.payment_methods[0];
+  const validPmIds = new Set(db.data.payment_methods.map(pm => pm.id));
+
+  if (defaultPM) {
+    let needsUpdate = false;
+    const updatedRecords = db.data.records.map(record => {
+      // Check if payment_method_id is missing OR invalid (not in current payment methods)
+      if (!record.payment_method_id || !validPmIds.has(record.payment_method_id)) {
+        needsUpdate = true;
+        return { ...record, payment_method_id: defaultPM.id };
+      }
+      return record;
     });
+
+    if (needsUpdate) {
+      db.data.records = updatedRecords;
+    }
   }
   if (!db.data.settings) {
     db.data.settings = { ...defaultData.settings };
@@ -232,6 +251,7 @@ export async function getDb(): Promise<Low<Data>> {
       } else {
         // Run migrations on existing data
         await migrate(db);
+        await db.write(); // Save migration changes
       }
 
       console.log('DB initialized and migrated successfully');

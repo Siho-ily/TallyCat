@@ -4,17 +4,19 @@ import React from 'react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import Card from '../ui/Card';
 import RecordTable from '../records/RecordTable';
-import { Record, Category } from '../../types';
+import { Record, Category, PaymentMethod } from '../../types';
 
 interface RecentRecordsSectionProps {
   records: Record[];
   categories: Category[];
+  paymentMethods: PaymentMethod[];
   onRecordClick: (record: Record) => void;
 }
 
 export default function RecentRecordsSection({
   records,
   categories,
+  paymentMethods,
   onRecordClick
 }: RecentRecordsSectionProps) {
   return (
@@ -25,6 +27,7 @@ export default function RecentRecordsSection({
       <RecordTable
         records={records}
         categories={categories}
+        paymentMethods={paymentMethods}
         onRecordClick={onRecordClick}
         showFooter={false}
       />

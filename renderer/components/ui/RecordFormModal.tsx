@@ -144,7 +144,7 @@ export default function RecordFormModal({
               value={formData.category_id}
               onChange={e => setFormData({ ...formData, category_id: e.target.value })}
               className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl px-5 py-3.5 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/40 outline-none transition-all appearance-none cursor-pointer">
-              <option value="">카테고리 없음</option>
+              <option value="">미지정</option>
               {categories
                 .filter(c => (c as any).is_active !== false)
                 .map(c => (
@@ -164,9 +164,6 @@ export default function RecordFormModal({
               value={formData.payment_method_id}
               onChange={e => setFormData({ ...formData, payment_method_id: e.target.value })}
               className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl px-5 py-3.5 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/40 outline-none transition-all appearance-none cursor-pointer">
-              <option value="" disabled>
-                결제 방식을 선택하세요
-              </option>
               {paymentMethods
                 .filter(pm => pm.is_active !== false)
                 .map(pm => (

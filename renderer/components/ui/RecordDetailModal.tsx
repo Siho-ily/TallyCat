@@ -22,11 +22,13 @@ export default function RecordDetailModal({
   onEdit,
   onDeleteSuccess
 }: RecordDetailModalProps) {
-  const { categories, showConfirm } = useData();
+  const { categories, paymentMethods, showConfirm } = useData();
 
   if (!isOpen || !record) return null;
 
   const categoryName = categories.find(c => c.id === record.category_id)?.name || '미지정';
+  const paymentMethodName =
+    (paymentMethods || []).find(pm => pm.id === record.payment_method_id)?.name || '미지정';
 
   const handleDelete = async () => {
     showConfirm('정말로 이 내역을 삭제하시겠습니까?', '내역 삭제', async () => {
@@ -81,6 +83,10 @@ export default function RecordDetailModal({
 
           <DetailItem label="카테고리" icon={<Tag size={14} />}>
             {categoryName}
+          </DetailItem>
+
+          <DetailItem label="결제방식" icon={<CreditCard size={14} />}>
+            {paymentMethodName}
           </DetailItem>
 
           <DetailItem label="금액" icon={<CreditCard size={14} />} align="right">
