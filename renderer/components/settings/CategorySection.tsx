@@ -181,7 +181,6 @@ export default function CategorySection({ categories, onAction, onSave }: Catego
               })
             }
             placeholder="0"
-            prefixIcon={<DollarSign size={16} />}
             suffix="원"
           />
 
