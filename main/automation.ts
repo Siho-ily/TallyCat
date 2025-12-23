@@ -21,29 +21,49 @@ export async function runAutomations() {
     for (const rule of db.data.automation_rules) {
       if (!rule.is_active) continue;
 
-      // Check if it's the right day (or later if missed) and not run this month
-      if (today >= rule.day_of_month && rule.last_run !== currentMonthStr) {
-        // Create the record
-        // The date should be the scheduled day of the current month
-        const scheduledDate = now
-          .set({ day: Math.min(rule.day_of_month, now.daysInMonth || 31) })
-          .set({ hour: 9, minute: 0, second: 0 }); // Default to 9 AM
+      const daysToCheck = rule.day_of_month || [];
 
-        const newRecord: Record = {
-          id: crypto.randomUUID(),
-          type: rule.type,
-          category_id: rule.category_id,
-          payment_method_id: rule.payment_method_id,
-          amount: rule.amount,
-          date: scheduledDate.toFormat('yyyy-MM-dd HH:mm:ss'),
-          note: `[자동화] ${rule.name}`
-        };
+      for (const day of daysToCheck) {
+        // Target date for this month
+        // Handle end of month edge cases (e.g. 31st in Feb -> 28th/29th)
+        const targetDay = Math.min(day, now.daysInMonth || 31);
 
-        db.data.records.unshift(newRecord);
-        rule.last_run = currentMonthStr;
-        recordsAdded++;
+        // If today is or is past the target day
+        if (today >= targetDay) {
+          // Construct the date string for this specific run
+          const runDateStr = `${currentMonthStr}-${targetDay.toString().padStart(2, '0')}`;
 
-        console.log(`[Automation] Executed rule: ${rule.name} for ${currentMonthStr}`);
+          // Check if already executed for this specific date
+          const executedDates = rule.executed_dates || [];
+          if (!executedDates.includes(runDateStr)) {
+            // Create the record
+            const scheduledDate = now
+              .set({ day: targetDay })
+              .set({ hour: 9, minute: 0, second: 0 });
+
+            const newRecord: Record = {
+              id: crypto.randomUUID(),
+              type: rule.type,
+              category_id: rule.category_id,
+              payment_method_id: rule.payment_method_id,
+              amount: rule.amount,
+              date: scheduledDate.toFormat('yyyy-MM-dd HH:mm:ss'),
+              note: `[자동화] ${rule.name}`
+            };
+
+            db.data.records.unshift(newRecord);
+
+            // Mark as executed
+            if (!rule.executed_dates) rule.executed_dates = [];
+            rule.executed_dates.push(runDateStr);
+
+            // Clean up old executed dates (keep only last 6 months to save space)
+            // Optional optimization, can be added later if needed.
+
+            recordsAdded++;
+            console.log(`[Automation] Executed rule: ${rule.name} for ${runDateStr}`);
+          }
+        }
       }
     }
 

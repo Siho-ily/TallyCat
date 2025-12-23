@@ -16,6 +16,7 @@ import Card from '../../components/ui/Card';
 import { AutomationRule } from '../../types';
 import { useData } from '../../context/DataContext';
 import AutomationFormModal from '../../components/automation/AutomationFormModal';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 import Badge from '../../components/ui/Badge';
 
 export default function AutomationPage() {
@@ -24,6 +25,7 @@ export default function AutomationPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const fetchRules = async () => {
     try {
@@ -49,13 +51,19 @@ export default function AutomationPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('정말 이 자동화 규칙을 삭제하시겠습니까?')) return;
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
     try {
-      await (window as any).ipc.invoke('delete-automation-rule', id);
+      await (window as any).ipc.invoke('delete-automation-rule', deleteTargetId);
       await fetchRules();
     } catch (error) {
       console.error('Failed to delete rule:', error);
+    } finally {
+      setDeleteTargetId(null);
     }
   };
 
@@ -122,7 +130,13 @@ export default function AutomationPage() {
                       <DollarSign size={12} /> {rule.amount.toLocaleString()}원
                     </span>
                     <span>{categories.find(c => c.id === rule.category_id)?.name || '미지정'}</span>
-                    <span className="opacity-60">(마지막 실행: {rule.last_run || '없음'})</span>
+                    <span className="opacity-60">
+                      (마지막 실행:{' '}
+                      {rule.executed_dates && rule.executed_dates.length > 0
+                        ? rule.executed_dates[rule.executed_dates.length - 1]
+                        : '없음'}
+                      )
+                    </span>
                   </div>
                 </div>
               </div>
@@ -179,6 +193,16 @@ export default function AutomationPage() {
           fetchRules();
           refreshData();
         }}
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={confirmDelete}
+        title="규칙 삭제"
+        message={'정말 이 자동화 규칙을 삭제하시겠습니까?\n삭제된 규칙은 복구할 수 없습니다.'}
+        type="danger"
+        confirmText="삭제"
       />
     </div>
   );

@@ -54,9 +54,9 @@ export interface AutomationRule {
   amount: number;
   category_id: string;
   payment_method_id: string;
-  day_of_month: number;
+  day_of_month: number[];
   is_active: boolean;
-  last_run?: string;
+  executed_dates?: string[]; // YYYY-MM-DD
 }
 
 export interface StorageInfo {

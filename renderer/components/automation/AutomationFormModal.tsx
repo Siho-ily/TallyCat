@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Zap, DollarSign, Calendar, Edit3, PlusCircle } from 'lucide-react';
+import { Zap, Calendar, Edit3 } from 'lucide-react';
 import BaseModal from '../ui/BaseModal';
 import { Button, Input } from '../ui/InputControls';
+import AlertModal from '../ui/AlertModal';
 import { useData } from '../../context/DataContext';
 import { AutomationRule } from '../../types';
 
@@ -27,9 +28,10 @@ export default function AutomationFormModal({
     amount: 0,
     category_id: '',
     payment_method_id: '',
-    day_of_month: 1,
+    day_of_month: [1],
     is_active: true
   });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (editingRule) {
@@ -45,7 +47,7 @@ export default function AutomationFormModal({
         amount: 0,
         category_id: defaultCat?.id || '',
         payment_method_id: defaultPM?.id || '',
-        day_of_month: 1,
+        day_of_month: [1],
         is_active: true
       });
     }
@@ -53,8 +55,8 @@ export default function AutomationFormModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.category_id || !formData.payment_method_id) {
-      alert('모든 필수 항목을 입력해주세요.');
+    if (!formData.name || !formData.payment_method_id) {
+      setError('규칙 명칭과 결제방식은 필수입니다.');
       return;
     }
 
@@ -64,7 +66,7 @@ export default function AutomationFormModal({
       onClose();
     } catch (error) {
       console.error('Failed to save automation rule:', error);
-      alert('저장에 실패했습니다.');
+      setError('자동화 규칙 저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -127,48 +129,15 @@ export default function AutomationFormModal({
           />
 
           <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="입력 금액"
-              type="number"
-              value={formData.amount || ''}
-              onChange={e => setFormData({ ...formData, amount: parseInt(e.target.value) || 0 })}
-              prefixIcon={<DollarSign size={16} />}
-              suffix="원"
-            />
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
-                실행 일자 (매월)
-              </label>
-              <div className="relative group">
-                <select
-                  value={formData.day_of_month || 1}
-                  onChange={e =>
-                    setFormData({ ...formData, day_of_month: parseInt(e.target.value) })
-                  }
-                  className="w-full h-12 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl px-10 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/40 transition-all appearance-none text-gray-900 dark:text-white">
-                  {Array.from({ length: 31 }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      {i + 1}일
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
-                  <Calendar size={16} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
-                카테고리
+                카테고리 (선택)
               </label>
               <select
                 value={formData.category_id || ''}
                 onChange={e => setFormData({ ...formData, category_id: e.target.value })}
                 className="w-full h-12 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/40 transition-all text-gray-900 dark:text-white">
-                <option value="">카테고리 선택</option>
+                <option value="">카테고리 없음</option>
                 {filteredCategories.map(c => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -195,8 +164,66 @@ export default function AutomationFormModal({
               </select>
             </div>
           </div>
+
+          <Input
+            label="입력 금액"
+            type="number"
+            value={formData.amount || ''}
+            onChange={e => setFormData({ ...formData, amount: parseInt(e.target.value) || 0 })}
+            suffix="원"
+          />
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">
+              실행 일자 (매월)
+            </label>
+            <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-4">
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 31 }, (_, i) => i + 1).map(day => {
+                  const isSelected = (formData.day_of_month as number[])?.includes(day);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => {
+                        const currentDays = (formData.day_of_month as number[]) || [];
+                        let newDays;
+                        if (currentDays.includes(day)) {
+                          newDays = currentDays.filter(d => d !== day);
+                        } else {
+                          newDays = [...currentDays, day];
+                        }
+                        // Ensure at least one day is selected if possible, or allow empty?
+                        // Let's allow empty but maybe show validation error later if needed.
+                        // But typically at least one day is expected.
+                        setFormData({ ...formData, day_of_month: newDays.sort((a, b) => a - b) });
+                      }}
+                      className={`h-8 rounded-lg text-sm font-bold transition-all ${
+                        isSelected
+                          ? 'bg-blue-500 text-white shadow-sm'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400'
+                      }`}>
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-2 text-xs text-gray-400 text-center">
+                {(formData.day_of_month as number[])?.length > 0
+                  ? `${(formData.day_of_month as number[])?.join(', ')}일에 실행됩니다.`
+                  : '실행할 날짜를 선택해주세요.'}
+              </div>
+            </div>
+          </div>
         </div>
       </form>
+
+      <AlertModal
+        isOpen={!!error}
+        onClose={() => setError(null)}
+        title="오류"
+        message={error || ''}
+      />
     </BaseModal>
   );
 }

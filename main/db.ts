@@ -52,9 +52,9 @@ export interface AutomationRule {
   amount: number;
   category_id: string;
   payment_method_id: string;
-  day_of_month: number; // 1~31
+  day_of_month: number[]; // 1~31
   is_active: boolean;
-  last_run?: string; // YYYY-MM
+  executed_dates?: string[]; // YYYY-MM-DD
 }
 
 export interface Data {
@@ -100,6 +100,44 @@ async function migrate(db: Low<Data>) {
   if (!db.data.categories) db.data.categories = [];
   if (!db.data.payment_methods) db.data.payment_methods = [];
   if (!db.data.automation_rules) db.data.automation_rules = [];
+
+  // Migration: Automation Rules (number -> number[])
+  if (db.data.automation_rules.length > 0) {
+    db.data.automation_rules = db.data.automation_rules.map((rule: any) => {
+      // 1. Convert day_of_month to array
+      let days: number[] = [];
+      if (typeof rule.day_of_month === 'number') {
+        days = [rule.day_of_month];
+      } else if (Array.isArray(rule.day_of_month)) {
+        days = rule.day_of_month;
+      } else {
+        days = [1]; // Default
+      }
+
+      // 2. Convert last_run (YYYY-MM) to executed_dates (YYYY-MM-DD)
+      // This is tricky because we don't know the exact day it ran.
+      // But we can just leave it empty or try to migrate.
+      // Better strategy: If last_run exists (e.g. '2023-10'), we assume it ran on the scheduled day.
+      let executed: string[] = rule.executed_dates || [];
+      if (rule.last_run && executed.length === 0) {
+        // Legacy support: We just rely on the new system going forward.
+        // We can ignore the old last_run for exact history, or
+        // if we want to prevent re-run this month, we should add a record for this month?
+        // Actually, the new logic checks YYYY-MM-DD.
+        // If last_run was '2025-12' and day was 20.
+        // We can add '2025-12-20'.
+        const day = days[0] || 1;
+        const lastRunStr = `${rule.last_run}-${day.toString().padStart(2, '0')}`;
+        executed.push(lastRunStr);
+      }
+
+      return {
+        ...rule,
+        day_of_month: days,
+        executed_dates: executed
+      };
+    });
+  }
 
   // Migration: Convert 'expense' to 'purchase' in records
   db.data.records = db.data.records.map(record => ({
