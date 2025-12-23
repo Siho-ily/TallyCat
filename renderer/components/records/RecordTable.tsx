@@ -50,7 +50,7 @@ export default function RecordTable({
                   <Badge type={record.type} />
                 </td>
                 <td className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300">
-                  {categories.find(c => c.id === record.category_id)?.name || '기타'}
+                  {categories.find(c => c.id === record.category_id)?.name || '미지정'}
                 </td>
                 <td
                   className={`px-6 py-4 text-right font-black text-sm ${

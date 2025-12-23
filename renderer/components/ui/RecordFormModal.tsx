@@ -111,19 +111,40 @@ export default function RecordFormModal({
       icon={editingRecord ? <Edit3 size={20} /> : <PlusCircle size={20} />}
       footer={footer}>
       <form id="record-form" onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-2 gap-2 bg-white dark:bg-gray-950 p-1.5 rounded-[20px] border border-gray-200 dark:border-gray-800">
+          <Button
+            type="button"
+            variant={formData.type === 'income' ? 'primary' : 'ghost'}
+            className={`flex-1 !rounded-xl ${
+              formData.type === 'income' ? 'bg-emerald-500 hover:bg-emerald-400' : ''
+            }`}
+            onClick={() => {
+              setFormData({ ...formData, type: 'income' });
+            }}>
+            매출
+          </Button>
+          <Button
+            type="button"
+            variant={formData.type === 'expense' ? 'primary' : 'ghost'}
+            className={`flex-1 !rounded-xl ${
+              formData.type === 'expense' ? 'bg-rose-500 hover:bg-rose-400' : ''
+            }`}
+            onClick={() => {
+              setFormData({ ...formData, type: 'expense' });
+            }}>
+            매입
+          </Button>
+        </div>
         <div className="space-y-6">
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest pl-1">
-              카테고리
+              카테고리 (선택사항)
             </label>
             <select
-              required
               value={formData.category_id}
               onChange={e => setFormData({ ...formData, category_id: e.target.value })}
               className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl px-5 py-3.5 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/40 outline-none transition-all appearance-none cursor-pointer">
-              <option value="" disabled>
-                카테고리를 선택하세요
-              </option>
+              <option value="">카테고리 없음</option>
               {categories
                 .filter(c => (c as any).is_active !== false)
                 .map(c => (

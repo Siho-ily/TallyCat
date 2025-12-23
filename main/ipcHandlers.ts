@@ -332,7 +332,7 @@ export function registerIpcHandlers() {
         return {
           날짜: record.date,
           유형: record.type === 'income' ? '매출' : '매입',
-          카테고리: category ? category.name : '기타',
+          카테고리: category ? category.name : '미지정',
           결제방식: paymentMethod ? paymentMethod.name : '미지정',
           금액: record.amount, // Numeric value
           메모: record.note || ''
@@ -426,7 +426,7 @@ export function registerIpcHandlers() {
         let rawDate = findValue(['날짜', '일자', 'date', '시간']);
         let rawAmount = findValue(['금액', '합계', 'amount', '가격']);
         let rawType = findValue(['유형', '구분', 'type', '수입', '매출', '지출', '매입']);
-        let catName = findValue(['카테고리', '항목', 'category', '분류']) || '기타';
+        let catName = findValue(['카테고리', '항목', 'category', '분류']) || '미지정';
         let note = findValue(['메모', '비고', 'note', '설명']) || '';
 
         // Essential: Amount

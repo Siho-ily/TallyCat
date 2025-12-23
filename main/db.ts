@@ -50,7 +50,7 @@ export interface Data {
 
 export const defaultData: Data = {
   records: [],
-  categories: [{ id: '1', name: '기본', is_active: true }],
+  categories: [],
   payment_methods: [
     { id: 'pm1', name: '카드', is_active: true },
     { id: 'pm2', name: '현금', is_active: true }
