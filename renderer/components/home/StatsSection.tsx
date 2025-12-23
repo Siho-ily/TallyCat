@@ -19,7 +19,7 @@ export default function StatsSection({ monthlyIncome, monthlyExpense }: StatsSec
         color="emerald"
       />
       <StatCard
-        title="이번 달 총 매입"
+        title="이번 달 총 비용"
         value={`${monthlyExpense.toLocaleString()}원`}
         icon={<ArrowDownRight size={24} />}
         color="rose"

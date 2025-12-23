@@ -22,7 +22,7 @@ export default function RecordsPage() {
   // Filtering states
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
   const [currentDate, setCurrentDate] = useState(DateTime.now());
-  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'income' | 'purchase' | 'spending'>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,7 +93,7 @@ export default function RecordsPage() {
       const dayRecords = records.filter(r => r.date.startsWith(dayStr));
       const income = dayRecords.filter(r => r.type === 'income').reduce((s, r) => s + r.amount, 0);
       const expense = dayRecords
-        .filter(r => r.type === 'expense')
+        .filter(r => r.type === 'purchase' || r.type === 'spending')
         .reduce((s, r) => s + r.amount, 0);
 
       days.push({

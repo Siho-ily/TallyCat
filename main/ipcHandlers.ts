@@ -1,5 +1,5 @@
 import { ipcMain, dialog, app } from 'electron';
-import { getDb, Data, Record, Category, Settings, defaultData } from './db';
+import { getDb, Data, Record, Category, Settings, defaultData, AutomationRule } from './db';
 import { DateTime } from 'luxon';
 import fs from 'fs-extra';
 import path from 'path';
@@ -69,6 +69,63 @@ export function registerIpcHandlers() {
       db.data.records = db.data.records.filter(r => r.id !== id);
       await db.write();
       return true;
+    })
+  );
+
+  // --- Automation Rules CRUD ---
+  ipcMain.handle('get-automation-rules', () =>
+    handleIpc('get-automation-rules', async () => {
+      const db = await getDb();
+      await db.read();
+      return db.data?.automation_rules || [];
+    })
+  );
+
+  ipcMain.handle('save-automation-rule', (_event, rule: AutomationRule) =>
+    handleIpc('save-automation-rule', async () => {
+      const db = await getDb();
+      await db.read();
+      if (!db.data) return false;
+
+      const index = db.data.automation_rules.findIndex(r => r.id === rule.id);
+      if (index > -1) {
+        db.data.automation_rules[index] = rule;
+      } else {
+        db.data.automation_rules.push({
+          ...rule,
+          id: rule.id || crypto.randomUUID()
+        });
+      }
+      await db.write();
+      return true;
+    })
+  );
+
+  ipcMain.handle('delete-automation-rule', (_event, id: string) =>
+    handleIpc('delete-automation-rule', async () => {
+      const db = await getDb();
+      await db.read();
+      if (!db.data) return false;
+
+      db.data.automation_rules = db.data.automation_rules.filter(r => r.id !== id);
+      await db.write();
+      return true;
+    })
+  );
+
+  ipcMain.handle('toggle-automation-rule', (_event, id: string) =>
+    handleIpc('toggle-automation-rule', async () => {
+      const db = await getDb();
+      await db.read();
+      if (!db.data) return false;
+
+      const rule = db.data.automation_rules.find(r => r.id === id);
+      if (rule) {
+        rule.is_active = !rule.is_active;
+        await db.write();
+        return true;
+      }
+      return false;
     })
   );
 
@@ -348,7 +405,7 @@ export function registerIpcHandlers() {
         const paymentMethod = paymentMethods.find(pm => pm.id === record.payment_method_id);
         return {
           날짜: record.date,
-          유형: record.type === 'income' ? '매출' : '매입',
+          유형: record.type === 'income' ? '매출' : record.type === 'purchase' ? '매입' : '지출',
           카테고리: category ? category.name : '미지정',
           결제방식: paymentMethod ? paymentMethod.name : '미지정',
           금액: record.amount, // Numeric value
@@ -476,15 +533,17 @@ export function registerIpcHandlers() {
         }
 
         // 3. Type Detection
-        let type: 'income' | 'expense' = 'income';
+        let type: 'income' | 'purchase' | 'spending' = 'income';
         const typeStr = String(rawType || '').toLowerCase();
-        if (
-          typeStr.includes('지출') ||
+        if (typeStr.includes('지출') || typeStr.includes('spending')) {
+          type = 'spending';
+        } else if (
           typeStr.includes('매입') ||
+          typeStr.includes('purchase') ||
           typeStr.includes('expense') ||
           typeStr.includes('out')
         ) {
-          type = 'expense';
+          type = 'purchase';
         } else if (
           typeStr.includes('수입') ||
           typeStr.includes('매출') ||

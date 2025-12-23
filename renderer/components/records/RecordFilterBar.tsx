@@ -20,8 +20,8 @@ interface RecordFilterBarProps {
   setCurrentDate: (date: DateTime) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  filterType: 'all' | 'income' | 'expense';
-  setFilterType: (type: 'all' | 'income' | 'expense') => void;
+  filterType: 'all' | 'income' | 'purchase' | 'spending';
+  setFilterType: (type: 'all' | 'income' | 'purchase' | 'spending') => void;
   filterCategory: string;
   setFilterCategory: (id: string) => void;
   filterPaymentMethod: string;
@@ -107,7 +107,7 @@ export default function RecordFilterBar({
         </div>
         <div className="flex flex-wrap items-center gap-8 lg:gap-12">
           <StatItem label="누적 매출" value={globalIncome} color="emerald" />
-          <StatItem label="누적 매입" value={globalExpense} color="rose" />
+          <StatItem label="누적 비용" value={globalExpense} color="rose" />
           <StatItem label="전체 순익" value={globalIncome - globalExpense} color="blue" />
         </div>
       </div>
@@ -214,9 +214,14 @@ export default function RecordFilterBar({
                 매출
               </option>
               <option
-                value="expense"
+                value="purchase"
                 className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
                 매입
+              </option>
+              <option
+                value="spending"
+                className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                지출
               </option>
             </select>
 

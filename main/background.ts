@@ -5,6 +5,7 @@ import { createWindow } from './helpers';
 import { registerIpcHandlers } from './ipcHandlers';
 import { runBackupService } from './backupService';
 import { getDb } from './db';
+import { startAutomationScheduler } from './automation';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -41,6 +42,7 @@ if (isProd) {
 
   console.log('App ready. Registering IPC handlers...');
   registerIpcHandlers();
+  startAutomationScheduler();
 
   // Remove default menu bar (File, Edit, etc.)
   Menu.setApplicationMenu(null);

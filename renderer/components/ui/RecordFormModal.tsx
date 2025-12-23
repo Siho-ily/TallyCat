@@ -116,7 +116,7 @@ export default function RecordFormModal({
       icon={editingRecord ? <Edit3 size={20} /> : <PlusCircle size={20} />}
       footer={footer}>
       <form id="record-form" onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-2 gap-2 bg-white dark:bg-gray-950 p-1.5 rounded-[20px] border border-gray-200 dark:border-gray-800">
+        <div className="grid grid-cols-3 gap-2 bg-white dark:bg-gray-950 p-1.5 rounded-[20px] border border-gray-200 dark:border-gray-800">
           <Button
             type="button"
             variant={formData.type === 'income' ? 'primary' : 'ghost'}
@@ -138,22 +138,41 @@ export default function RecordFormModal({
           </Button>
           <Button
             type="button"
-            variant={formData.type === 'expense' ? 'primary' : 'ghost'}
+            variant={formData.type === 'purchase' ? 'primary' : 'ghost'}
             className={`flex-1 !rounded-xl ${
-              formData.type === 'expense' ? 'bg-rose-500 hover:bg-rose-400' : ''
+              formData.type === 'purchase' ? 'bg-amber-500 hover:bg-amber-400 text-white' : ''
             }`}
             onClick={() => {
               const defaultCat = categories.find(
-                c => c.is_active !== false && c.type === 'expense' && c.is_default
+                c => c.is_active !== false && c.type === 'purchase' && c.is_default
               );
               setFormData({
                 ...formData,
-                type: 'expense',
+                type: 'purchase',
                 category_id: defaultCat?.id || '',
                 amount: defaultCat?.default_amount || formData.amount
               });
             }}>
             매입
+          </Button>
+          <Button
+            type="button"
+            variant={formData.type === 'spending' ? 'primary' : 'ghost'}
+            className={`flex-1 !rounded-xl ${
+              formData.type === 'spending' ? 'bg-rose-500 hover:bg-rose-400' : ''
+            }`}
+            onClick={() => {
+              const defaultCat = categories.find(
+                c => c.is_active !== false && c.type === 'spending' && c.is_default
+              );
+              setFormData({
+                ...formData,
+                type: 'spending',
+                category_id: defaultCat?.id || '',
+                amount: defaultCat?.default_amount || formData.amount
+              });
+            }}>
+            지출
           </Button>
         </div>
         <div className="space-y-6">

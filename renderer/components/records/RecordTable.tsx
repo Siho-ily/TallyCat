@@ -35,7 +35,9 @@ export default function RecordTable({
   const displayExpense =
     totalExpense !== undefined
       ? totalExpense
-      : records.filter(r => r.type === 'expense').reduce((s, r) => s + r.amount, 0);
+      : records
+          .filter(r => r.type === 'purchase' || r.type === 'spending')
+          .reduce((s, r) => s + r.amount, 0);
 
   const displayNetProfit =
     totalIncome !== undefined && totalExpense !== undefined
@@ -82,7 +84,7 @@ export default function RecordTable({
           .filter(r => r.type === 'income')
           .reduce((s, r) => s + r.amount, 0);
         const dayExpense = dayRecords
-          .filter(r => r.type === 'expense')
+          .filter(r => r.type === 'purchase' || r.type === 'spending')
           .reduce((s, r) => s + r.amount, 0);
 
         rows.push(
@@ -95,7 +97,7 @@ export default function RecordTable({
                 </span>
                 <div className="flex gap-4 text-[10px] font-bold">
                   <span className="text-emerald-500">매출: +{dayIncome.toLocaleString()}원</span>
-                  <span className="text-rose-500">매입: -{dayExpense.toLocaleString()}원</span>
+                  <span className="text-rose-500">비용: -{dayExpense.toLocaleString()}원</span>
                 </div>
               </div>
             </td>
@@ -146,7 +148,7 @@ export default function RecordTable({
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                        필터 내 매입
+                        필터 내 비용
                       </span>
                       <span className="text-sm font-black text-rose-400">
                         -{displayExpense.toLocaleString()}원

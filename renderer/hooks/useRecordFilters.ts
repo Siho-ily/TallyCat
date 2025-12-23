@@ -7,7 +7,7 @@ import { Record, Category } from '../types';
 interface UseRecordFiltersProps {
   records: Record[];
   categories: Category[];
-  filterType: 'all' | 'income' | 'expense';
+  filterType: 'all' | 'income' | 'purchase' | 'spending';
   filterCategory: string;
   filterPaymentMethod: string;
   searchTerm: string;

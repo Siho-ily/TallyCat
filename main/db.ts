@@ -5,7 +5,7 @@ import path from 'path';
 
 export interface Record {
   id: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'purchase' | 'spending';
   category_id: string;
   payment_method_id: string;
   amount: number;
@@ -16,7 +16,7 @@ export interface Record {
 export interface Category {
   id: string;
   name: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'purchase' | 'spending';
   is_active: boolean;
   is_default?: boolean;
   default_amount?: number;
@@ -42,6 +42,19 @@ export interface Settings {
   sub_backup_path: string;
   main_auto_delete_months: number;
   sub_auto_delete_months: number;
+  auto_backup_on_close: boolean;
+}
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  type: 'income' | 'purchase' | 'spending';
+  amount: number;
+  category_id: string;
+  payment_method_id: string;
+  day_of_month: number; // 1~31
+  is_active: boolean;
+  last_run?: string; // YYYY-MM
 }
 
 export interface Data {
@@ -49,6 +62,7 @@ export interface Data {
   categories: Category[];
   payment_methods: PaymentMethod[];
   settings: Settings;
+  automation_rules: AutomationRule[];
 }
 
 export const defaultData: Data = {
@@ -71,8 +85,10 @@ export const defaultData: Data = {
     main_backup_path: '',
     sub_backup_path: '',
     main_auto_delete_months: 3,
-    sub_auto_delete_months: 12
-  }
+    sub_auto_delete_months: 12,
+    auto_backup_on_close: true
+  },
+  automation_rules: []
 };
 
 // Migration function to handle schema changes
@@ -81,6 +97,15 @@ async function migrate(db: Low<Data>) {
 
   // Initialize missing top-level keys
   if (!db.data.records) db.data.records = [];
+  if (!db.data.categories) db.data.categories = [];
+  if (!db.data.payment_methods) db.data.payment_methods = [];
+  if (!db.data.automation_rules) db.data.automation_rules = [];
+
+  // Migration: Convert 'expense' to 'purchase' in records
+  db.data.records = db.data.records.map(record => ({
+    ...record,
+    type: (record.type as any) === 'expense' ? 'purchase' : record.type
+  }));
 
   // Payment Methods Migration
   if (!db.data.payment_methods || db.data.payment_methods.length === 0) {
@@ -97,7 +122,7 @@ async function migrate(db: Low<Data>) {
   const defaultPaymentMethod =
     db.data.payment_methods.find(pm => pm.name === '카드') || db.data.payment_methods[0];
 
-  // Categories Migration: Remove type field and merge duplicates
+  // Categories Migration: Convert 'expense' type and merge duplicates
   if (!db.data.categories || db.data.categories.length === 0) {
     db.data.categories = [...defaultData.categories];
   } else {
@@ -109,7 +134,10 @@ async function migrate(db: Low<Data>) {
     for (const oldCat of oldCategories) {
       const name = oldCat.name;
       const isActive = typeof oldCat.is_active === 'undefined' ? true : oldCat.is_active;
-      const type = oldCat.type || 'income'; // Default to income for existing categories
+      let type = oldCat.type || 'income';
+      // Convert 'expense' type to 'purchase'
+      if (type === 'expense') type = 'purchase';
+
       const key = `${name}_${type}`;
 
       if (categoryMap.has(key)) {
@@ -121,9 +149,10 @@ async function migrate(db: Low<Data>) {
         const newCat: Category = {
           id: oldCat.id,
           name: name,
-          type: type as 'income' | 'expense',
+          type: type as 'income' | 'purchase' | 'spending',
           is_active: isActive,
-          default_amount: oldCat.default_amount
+          default_amount: oldCat.default_amount,
+          is_default: oldCat.is_default
         };
         categoryMap.set(key, newCat);
         idMapping.set(oldCat.id, newCat.id);

@@ -94,7 +94,7 @@ export default function CategorySection({ categories, onAction, onSave }: Catego
     setEditingCategory(category);
   };
 
-  const handleAddClick = (type: 'income' | 'expense') => {
+  const handleAddClick = (type: 'income' | 'purchase' | 'spending') => {
     setEditingCategory({
       name: '',
       type,
@@ -127,9 +127,19 @@ export default function CategorySection({ categories, onAction, onSave }: Catego
         <div className="border-t border-gray-100 dark:border-gray-800/50 pt-4" />
 
         <CategoryList
-          title="매입 카테고리 (Expense)"
-          categories={categories.filter(c => c.is_active !== false && c.type === 'expense')}
-          onAdd={() => handleAddClick('expense')}
+          title="매입 카테고리 (Purchase)"
+          categories={categories.filter(c => c.is_active !== false && c.type === 'purchase')}
+          onAdd={() => handleAddClick('purchase')}
+          onEdit={handleEditClick}
+          onDelete={id => onAction('delete', id)}
+        />
+
+        <div className="border-t border-gray-100 dark:border-gray-800/50 pt-4" />
+
+        <CategoryList
+          title="지출 카테고리 (Spending)"
+          categories={categories.filter(c => c.is_active !== false && c.type === 'spending')}
+          onAdd={() => handleAddClick('spending')}
           onEdit={handleEditClick}
           onDelete={id => onAction('delete', id)}
         />

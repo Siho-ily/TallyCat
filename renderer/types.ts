@@ -1,6 +1,6 @@
 export interface Record {
   id: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'purchase' | 'spending';
   category_id: string;
   payment_method_id: string;
   amount: number;
@@ -11,7 +11,7 @@ export interface Record {
 export interface Category {
   id: string;
   name: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'purchase' | 'spending';
   is_active: boolean;
   is_default?: boolean;
   default_amount?: number;
@@ -45,6 +45,18 @@ export interface Settings {
   sub_retention_months: number;
   sub_retention_days: number;
   sub_retention_count: number;
+}
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  type: 'income' | 'purchase' | 'spending';
+  amount: number;
+  category_id: string;
+  payment_method_id: string;
+  day_of_month: number;
+  is_active: boolean;
+  last_run?: string;
 }
 
 export interface StorageInfo {

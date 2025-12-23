@@ -33,7 +33,7 @@ export default function HomePage() {
     .reduce((sum, r) => sum + r.amount, 0);
 
   const monthlyExpense = currentMonthRecords
-    .filter(r => r.type === 'expense')
+    .filter(r => r.type === 'purchase' || r.type === 'spending')
     .reduce((sum, r) => sum + r.amount, 0);
 
   const recentRecords = [...records]

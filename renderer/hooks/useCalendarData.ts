@@ -27,7 +27,7 @@ export function useCalendarData(currentDate: DateTime, records: Record[]): Calen
 
       const income = dayRecords.filter(r => r.type === 'income').reduce((s, r) => s + r.amount, 0);
       const expense = dayRecords
-        .filter(r => r.type === 'expense')
+        .filter(r => r.type === 'purchase' || r.type === 'spending')
         .reduce((s, r) => s + r.amount, 0);
 
       days.push({

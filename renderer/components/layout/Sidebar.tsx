@@ -9,7 +9,9 @@ import {
   Settings,
   Database,
   HelpCircle,
-  RefreshCw
+  RefreshCw,
+  BarChart3,
+  Zap
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 
@@ -20,6 +22,8 @@ export default function Sidebar() {
   const navItems = [
     { name: '대시보드', href: '/home', icon: LayoutDashboard },
     { name: '매출/매입 내역', href: '/records', icon: ReceiptText },
+    { name: '분석', href: '/analysis', icon: BarChart3 },
+    { name: '자동화', href: '/automation', icon: Zap },
     { name: '설정', href: '/settings', icon: Settings },
     { name: '프로그램 가이드', href: '/guide', icon: HelpCircle }
   ];
