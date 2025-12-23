@@ -1,6 +1,4 @@
-'use client';
-
-import React from 'react';
+import { DateTime } from 'luxon';
 import Badge from '../ui/Badge';
 import EmptyState from '../ui/EmptyState';
 import { Record, Category, PaymentMethod } from '../../types';
@@ -10,6 +8,7 @@ interface RecordTableProps {
   categories: Category[];
   paymentMethods: PaymentMethod[];
   onRecordClick: (record: Record) => void;
+  period?: 'day' | 'week' | 'month' | 'year'; // Added period prop
   netProfit?: number;
   totalIncome?: number;
   totalExpense?: number;
@@ -21,6 +20,7 @@ export default function RecordTable({
   categories,
   paymentMethods,
   onRecordClick,
+  period = 'day',
   netProfit = 0,
   totalIncome,
   totalExpense,
@@ -41,6 +41,82 @@ export default function RecordTable({
     totalIncome !== undefined && totalExpense !== undefined
       ? totalIncome - totalExpense
       : netProfit;
+
+  // Helper function to render rows with grouping headers
+  const renderRows = () => {
+    if (records.length === 0) {
+      return (
+        <tr>
+          <td colSpan={5}>
+            <EmptyState />
+          </td>
+        </tr>
+      );
+    }
+
+    if (period === 'day') {
+      return records.map(record => (
+        <RecordRow
+          key={record.id}
+          record={record}
+          categories={categories}
+          paymentMethods={paymentMethods}
+          onClick={onRecordClick}
+        />
+      ));
+    }
+
+    // Month or other views: Insert date headers
+    const rows: React.ReactNode[] = [];
+    let lastDate = '';
+
+    // Sort records by date descending
+    const sortedRecords = [...records].sort((a, b) => b.date.localeCompare(a.date));
+
+    sortedRecords.forEach(record => {
+      const currentDate = record.date.split(' ')[0];
+      if (currentDate !== lastDate) {
+        // Calculate daily totals for this header
+        const dayRecords = sortedRecords.filter(r => r.date.startsWith(currentDate));
+        const dayIncome = dayRecords
+          .filter(r => r.type === 'income')
+          .reduce((s, r) => s + r.amount, 0);
+        const dayExpense = dayRecords
+          .filter(r => r.type === 'expense')
+          .reduce((s, r) => s + r.amount, 0);
+
+        rows.push(
+          <tr key={`header-${currentDate}`} className="bg-gray-100/80 dark:bg-gray-800/40">
+            <td colSpan={5} className="px-6 py-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50"></div>
+                  {DateTime.fromISO(currentDate).setLocale('ko').toFormat('M월 d일 (ccc)')}
+                </span>
+                <div className="flex gap-4 text-[10px] font-bold">
+                  <span className="text-emerald-500">매출: +{dayIncome.toLocaleString()}원</span>
+                  <span className="text-rose-500">매입: -{dayExpense.toLocaleString()}원</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+        );
+        lastDate = currentDate;
+      }
+      rows.push(
+        <RecordRow
+          key={record.id}
+          record={record}
+          categories={categories}
+          paymentMethods={paymentMethods}
+          onClick={onRecordClick}
+        />
+      );
+    });
+
+    return rows;
+  };
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-3xl overflow-hidden shadow-xl animate-in fade-in duration-300">
       <div className="overflow-x-auto">
@@ -54,47 +130,7 @@ export default function RecordTable({
               <th className="px-6 py-5 text-right">금액</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-            {records.map(record => (
-              <tr
-                key={record.id}
-                onClick={() => onRecordClick(record)}
-                className="hover:bg-gray-100 dark:hover:bg-gray-800/20 group transition-all cursor-pointer">
-                <td className="px-6 py-4">
-                  <div className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                    {record.date.split(' ')[0]}
-                  </div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">
-                    {record.date.split(' ')[1]}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <Badge type={record.type} />
-                </td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300">
-                  {categories.find(c => c.id === record.category_id)?.name || '미지정'}
-                </td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300">
-                  {(paymentMethods || []).find(pm => pm.id === record.payment_method_id)?.name ||
-                    '미지정'}
-                </td>
-                <td
-                  className={`px-6 py-4 text-right font-black text-sm ${
-                    record.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-                  }`}>
-                  {record.type === 'income' ? '+' : '-'}
-                  {record.amount.toLocaleString()}원
-                </td>
-              </tr>
-            ))}
-            {records.length === 0 && (
-              <tr>
-                <td colSpan={5}>
-                  <EmptyState />
-                </td>
-              </tr>
-            )}
-          </tbody>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">{renderRows()}</tbody>
           {showFooter && records.length > 0 && (
             <tfoot className="bg-gray-200 dark:bg-gray-800/50 border-t border-gray-300 dark:border-gray-700">
               <tr>
@@ -138,5 +174,47 @@ export default function RecordTable({
         </table>
       </div>
     </div>
+  );
+}
+
+// Sub-component for a single record row
+function RecordRow({
+  record,
+  categories,
+  paymentMethods,
+  onClick
+}: {
+  record: Record;
+  categories: Category[];
+  paymentMethods: PaymentMethod[];
+  onClick: (r: Record) => void;
+}) {
+  return (
+    <tr
+      onClick={() => onClick(record)}
+      className="hover:bg-gray-100 dark:hover:bg-gray-800/20 group transition-all cursor-pointer">
+      <td className="px-6 py-4">
+        <div className="text-sm font-bold text-gray-700 dark:text-gray-200">
+          {record.date.split(' ')[0]}
+        </div>
+        <div className="text-[10px] text-gray-500 mt-0.5">{record.date.split(' ')[1]}</div>
+      </td>
+      <td className="px-6 py-4">
+        <Badge type={record.type} />
+      </td>
+      <td className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300">
+        {categories.find(c => c.id === record.category_id)?.name || '미지정'}
+      </td>
+      <td className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300">
+        {(paymentMethods || []).find(pm => pm.id === record.payment_method_id)?.name || '미지정'}
+      </td>
+      <td
+        className={`px-6 py-4 text-right font-black text-sm ${
+          record.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+        }`}>
+        {record.type === 'income' ? '+' : '-'}
+        {record.amount.toLocaleString()}원
+      </td>
+    </tr>
   );
 }

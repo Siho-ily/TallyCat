@@ -116,14 +116,14 @@ export default function RecordFilterBar({
         {/* 2nd Row: Period Controls (Horizontal) */}
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
           <div className="flex p-1 bg-white dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-800 shrink-0">
-            {(['day', 'week', 'month', 'year'] as const).map(p => (
+            {(['day', 'month'] as const).map(p => (
               <Button
                 key={p}
                 variant={period === p ? 'primary' : 'ghost'}
                 size="sm"
                 className="!text-[10px] !px-4 !rounded-xl"
                 onClick={() => setPeriod(p)}>
-                {p === 'day' ? '일일' : p === 'week' ? '주간' : p === 'month' ? '월간' : '연간'}
+                {p === 'day' ? '일일' : '월간'}
               </Button>
             ))}
           </div>

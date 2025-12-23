@@ -13,7 +13,6 @@ import PageHeader from '../../components/ui/PageHeader';
 import RecordFilterBar from '../../components/records/RecordFilterBar';
 import RecordTable from '../../components/records/RecordTable';
 import CalendarView from '../../components/records/CalendarView';
-import Pagination from '../../components/ui/Pagination';
 import { Button } from '../../components/ui/InputControls';
 
 export default function RecordsPage() {
@@ -27,8 +26,6 @@ export default function RecordsPage() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 15;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -58,15 +55,8 @@ export default function RecordsPage() {
   });
 
   useEffect(() => {
-    setCurrentPage(1);
+    // Reset any view state if needed
   }, [filterType, filterCategory, filterPaymentMethod, searchTerm, currentDate, period, viewMode]);
-
-  const paginatedRecords = React.useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredRecords.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredRecords, currentPage]);
-
-  const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE);
 
   const totals = React.useMemo(() => {
     return filteredRecords.reduce(
@@ -129,7 +119,11 @@ export default function RecordsPage() {
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-20">
       <PageHeader
         title="매출/매입 내역"
-        description={`${currentDate.toFormat('yyyy년 MM월')} 매장 거래 내역입니다.`}
+        description={
+          period === 'month'
+            ? `${currentDate.toFormat('yyyy년 MM월')} 매장 거래 내역입니다.`
+            : `${currentDate.toFormat('yyyy년 MM월 dd일')} 상세 내역입니다.`
+        }
         actions={
           <>
             <div className="flex bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-1 rounded-xl scale-90 shadow-inner">
@@ -182,24 +176,18 @@ export default function RecordsPage() {
       />
 
       {viewMode === 'list' ? (
-        <>
-          <RecordTable
-            records={paginatedRecords}
-            categories={categories}
-            paymentMethods={paymentMethods}
-            onRecordClick={record => {
-              setSelectedRecord(record);
-              setIsDetailModalOpen(true);
-            }}
-            totalIncome={totals.income}
-            totalExpense={totals.expense}
-          />
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </>
+        <RecordTable
+          records={filteredRecords}
+          categories={categories}
+          paymentMethods={paymentMethods}
+          period={period}
+          onRecordClick={record => {
+            setSelectedRecord(record);
+            setIsDetailModalOpen(true);
+          }}
+          totalIncome={totals.income}
+          totalExpense={totals.expense}
+        />
       ) : (
         <CalendarView calendarDays={calendarDays} onDayClick={handleOpenAddModal} />
       )}
