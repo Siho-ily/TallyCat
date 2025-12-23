@@ -82,7 +82,16 @@ if (isProd) {
   }
 })();
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
+  try {
+    const db = await getDb();
+    if (db.data?.settings?.auto_backup_on_close && db.data.settings.auto_backup) {
+      console.log('[App] Running final backup before closure...');
+      await runBackupService();
+    }
+  } catch (e) {
+    console.error('Final backup failed:', e);
+  }
   app.quit();
 });
 

@@ -40,8 +40,16 @@ export interface Settings {
   sub_max_backup_size_mb: number;
   main_backup_path: string;
   sub_backup_path: string;
-  main_auto_delete_months: number;
-  sub_auto_delete_months: number;
+  main_auto_delete_enabled: boolean;
+  main_retention_years: number;
+  main_retention_months: number;
+  main_retention_days: number;
+  main_retention_count: number;
+  sub_auto_delete_enabled: boolean;
+  sub_retention_years: number;
+  sub_retention_months: number;
+  sub_retention_days: number;
+  sub_retention_count: number;
   auto_backup_on_close: boolean;
 }
 
@@ -84,8 +92,16 @@ export const defaultData: Data = {
     sub_max_backup_size_mb: 1000,
     main_backup_path: '',
     sub_backup_path: '',
-    main_auto_delete_months: 3,
-    sub_auto_delete_months: 12,
+    main_auto_delete_enabled: true,
+    main_retention_years: 0,
+    main_retention_months: 3,
+    main_retention_days: 0,
+    main_retention_count: 50,
+    sub_auto_delete_enabled: true,
+    sub_retention_years: 1,
+    sub_retention_months: 0,
+    sub_retention_days: 0,
+    sub_retention_count: 100,
     auto_backup_on_close: true
   },
   automation_rules: []
@@ -267,9 +283,17 @@ async function migrate(db: Low<Data>) {
       s.sub_max_backup_size_mb = Math.round(s.sub_max_backup_size_gb * 1024);
       delete s.sub_max_backup_size_gb;
     }
-    if (s.auto_delete_months && !db.data.settings.main_auto_delete_months) {
-      db.data.settings.main_auto_delete_months = s.auto_delete_months;
-      db.data.settings.sub_auto_delete_months = s.auto_delete_months;
+    if (s.auto_delete_months && typeof s.main_retention_months === 'undefined') {
+      db.data.settings.main_retention_months = s.auto_delete_months;
+      db.data.settings.sub_retention_months = s.auto_delete_months;
+    }
+
+    // Ensure enabled flags are set
+    if (typeof s.main_auto_delete_enabled === 'undefined') {
+      db.data.settings.main_auto_delete_enabled = true;
+    }
+    if (typeof s.sub_auto_delete_enabled === 'undefined') {
+      db.data.settings.sub_auto_delete_enabled = true;
     }
 
     // Default Paths (Migration for older versions)

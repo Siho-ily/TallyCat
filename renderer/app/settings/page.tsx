@@ -242,16 +242,18 @@ export default function SettingsPage() {
               onAction={handlePaymentMethodAction}
               onRename={handleRenamePaymentMethod}
             />
-            <DangerZoneSection onResetData={handleResetData} onResetSystem={handleResetSystem} />
           </div>
 
           {/* Right Column: Maintenance Actions */}
-          <MaintenanceSection
-            onExport={handleExport}
-            onImport={handleImport}
-            onRefresh={refreshData}
-            showAlert={showAlert}
-          />
+          <div className="space-y-8">
+            <MaintenanceSection
+              onExport={handleExport}
+              onImport={handleImport}
+              onRefresh={refreshData}
+              showAlert={showAlert}
+            />
+            <DangerZoneSection onResetData={handleResetData} onResetSystem={handleResetSystem} />
+          </div>
         </div>
       </div>
 
