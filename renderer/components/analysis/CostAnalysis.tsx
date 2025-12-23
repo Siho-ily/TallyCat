@@ -315,9 +315,7 @@ export default function CostAnalysis({ records, categories, targetMonth }: CostA
                         style={{ width: `${Math.min(100, share)}%` }}
                       />
                       <span
-                        className={`relative z-10 px-6 py-4 block text-xs font-black ${
-                          isTotal ? 'text-slate-300 dark:text-white' : 'text-slate-100'
-                        }`}>
+                        className={`relative z-10 px-6 py-4 block text-xs font-black text-dark dark:text-white`}>
                         {share.toFixed(1)}%
                       </span>
                     </td>

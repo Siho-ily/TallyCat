@@ -332,14 +332,12 @@ export default function RevenueAnalysis({
                       className={`absolute inset-y-0 left-0 transition-all duration-1000 ease-out z-0 ${
                         row.isTotal
                           ? 'bg-blue-500/50 dark:bg-blue-300/40'
-                          : 'bg-blue-500/70 dark:bg-blue-400/50'
+                          : 'bg-emerald-500/70 dark:bg-emerald-400/50'
                       }`}
                       style={{ width: `${Math.min(100, row.share)}%` }}
                     />
                     <span
-                      className={`relative z-10 px-6 py-4 block text-xs font-black ${
-                        row.isTotal ? 'text-slate-900 dark:text-white' : 'text-slate-500'
-                      }`}>
+                      className={`relative z-10 px-6 py-4 block text-xs font-black text-dark dark:text-white`}>
                       {row.share.toFixed(1)}%
                     </span>
                   </td>
