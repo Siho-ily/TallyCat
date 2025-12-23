@@ -21,7 +21,7 @@ export default function Sidebar() {
 
   const navItems = [
     { name: '대시보드', href: '/home', icon: LayoutDashboard },
-    { name: '매출/매입 내역', href: '/records', icon: ReceiptText },
+    { name: '매출/비용 내역', href: '/records', icon: ReceiptText },
     { name: '분석', href: '/analysis', icon: BarChart3 },
     { name: '자동화', href: '/automation', icon: Zap },
     { name: '설정', href: '/settings', icon: Settings },

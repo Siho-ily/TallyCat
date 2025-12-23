@@ -426,7 +426,7 @@ export function registerIpcHandlers() {
       ];
 
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, '매출매입내역');
+      XLSX.utils.book_append_sheet(workbook, worksheet, '매출비용내역');
       XLSX.writeFile(workbook, filePath);
     }
 
