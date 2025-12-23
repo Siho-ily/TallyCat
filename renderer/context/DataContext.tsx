@@ -1,11 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Record, Category, Settings, StorageInfo } from '../types';
+import { Record, Category, Settings, StorageInfo, PaymentMethod } from '../types';
 
 interface DataContextType {
   records: Record[];
   categories: Category[];
+  paymentMethods: PaymentMethod[];
   settings: Settings | null;
   storage: StorageInfo | null;
   loading: boolean;
@@ -29,6 +30,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [records, setRecords] = useState<Record[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,14 +88,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const refreshData = useCallback(async () => {
     try {
       // 1. Fetch core data first to unblock UI
-      const [r, c, s] = await Promise.all([
+      const [r, c, pm, s] = await Promise.all([
         (window as any).ipc.invoke('get-records'),
         (window as any).ipc.invoke('get-categories'),
+        (window as any).ipc.invoke('get-payment-methods'),
         (window as any).ipc.invoke('get-settings')
       ]);
 
       setRecords(r);
       setCategories(c);
+      setPaymentMethods(pm);
       setSettings(s);
       setLoading(false);
 
@@ -119,6 +123,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       value={{
         records,
         categories,
+        paymentMethods,
         settings,
         storage,
         loading,

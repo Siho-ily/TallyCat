@@ -12,14 +12,24 @@ import { Settings } from '../../types';
 // Refactored Components
 import BackupSection from '../../components/settings/BackupSection';
 import CategorySection from '../../components/settings/CategorySection';
+import PaymentMethodSection from '../../components/settings/PaymentMethodSection';
 import MaintenanceSection from '../../components/settings/MaintenanceSection';
 import DangerZoneSection from '../../components/settings/DangerZoneSection';
+import { useState } from 'react';
 
 export default function SettingsPage() {
-  const { categories, settings, loading, refreshData, showAlert, showConfirm, showPrompt } =
-    useData();
+  const {
+    categories,
+    paymentMethods,
+    settings,
+    loading,
+    refreshData,
+    showAlert,
+    showConfirm,
+    showPrompt
+  } = useData();
   const { theme, toggleTheme } = useTheme();
-  const [showDebug, setShowDebug] = React.useState(false);
+  const [showDebug, setShowDebug] = useState(false);
 
   // --- Handlers ---
   const handleUpdateSettings = async (newSettings: Partial<Settings>) => {
@@ -62,17 +72,12 @@ export default function SettingsPage() {
     );
   };
 
-  const handleCategoryAction = async (
-    action: 'add' | 'delete',
-    type: 'income' | 'expense',
-    id?: string
-  ) => {
+  const handleCategoryAction = async (action: 'add' | 'delete', id?: string) => {
     try {
       if (action === 'add') {
         showPrompt('새 카테고리 이름을 입력하세요:', '카테고리 추가', async name => {
           if (name && name.trim()) {
             const success = await (window as any).ipc.invoke('save-category', {
-              type,
               name: name.trim()
             });
             if (success) await refreshData();
@@ -112,6 +117,58 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Failed to rename category:', error);
       showAlert('카테고리 이름 변경 중 오류가 발생했습니다.', '오류');
+    }
+  };
+
+  const handlePaymentMethodAction = async (action: 'add' | 'delete', id?: string) => {
+    try {
+      if (action === 'add') {
+        showPrompt('새 결제 방식 이름을 입력하세요:', '결제 방식 추가', async name => {
+          if (name && name.trim()) {
+            const success = await (window as any).ipc.invoke('save-payment-method', {
+              name: name.trim()
+            });
+            if (success) await refreshData();
+          }
+        });
+      } else if (action === 'delete' && id) {
+        const paymentMethod = paymentMethods.find(pm => pm.id === id);
+        const defaultMethods = ['카드', '현금'];
+        if (paymentMethod && defaultMethods.includes(paymentMethod.name)) {
+          showAlert('기본 결제 방식은 삭제할 수 없습니다.', '알림');
+          return;
+        }
+
+        showConfirm(
+          '정말 이 결제 방식을 삭제하시겠습니까? 삭제 후에도 기존 내역에는 결제 방식 정보가 유지되지만, 목록에서는 더 이상 보이지 않습니다.',
+          '결제 방식 삭제 확인',
+          async () => {
+            const success = await (window as any).ipc.invoke('delete-payment-method', id);
+            if (success) await refreshData();
+          }
+        );
+      }
+    } catch (error: any) {
+      console.error('Payment method action failed:', error);
+      const msg = error?.message || '결제 방식 수정 중 오류가 발생했습니다.';
+      showAlert(msg, '오류');
+    }
+  };
+
+  const handleRenamePaymentMethod = async (id: string, newName: string) => {
+    try {
+      const success = await (window as any).ipc.invoke('save-payment-method', {
+        id,
+        name: newName
+      });
+      if (success) {
+        await refreshData();
+      } else {
+        showAlert('결제 방식 수정에 실패했습니다.', '오류');
+      }
+    } catch (error) {
+      console.error('Failed to rename payment method:', error);
+      showAlert('결제 방식 이름 변경 중 오류가 발생했습니다.', '오류');
     }
   };
 
@@ -194,6 +251,11 @@ export default function SettingsPage() {
               categories={categories}
               onAction={handleCategoryAction}
               onRename={handleRenameCategory}
+            />
+            <PaymentMethodSection
+              paymentMethods={paymentMethods}
+              onAction={handlePaymentMethodAction}
+              onRename={handleRenamePaymentMethod}
             />
             <DangerZoneSection onResetData={handleResetData} onResetSystem={handleResetSystem} />
           </div>

@@ -107,7 +107,6 @@ export function registerIpcHandlers() {
       } else {
         db.data.categories.push({
           id: generateId(),
-          type: category.type || 'income',
           name: category.name || '미분류',
           is_active: true
         });
@@ -128,6 +127,68 @@ export function registerIpcHandlers() {
       const index = db.data.categories.findIndex(c => c.id === id);
       if (index > -1) {
         db.data.categories[index] = { ...db.data.categories[index], is_active: false };
+        await db.write();
+        return true;
+      }
+      return false;
+    })
+  );
+
+  // --- Payment Methods CRUD ---
+  ipcMain.handle('get-payment-methods', () =>
+    handleIpc('get-payment-methods', async () => {
+      const db = await getDb();
+      await db.read();
+      return db.data?.payment_methods || [];
+    })
+  );
+
+  ipcMain.handle('save-payment-method', (_event, paymentMethod: any) =>
+    handleIpc('save-payment-method', async () => {
+      const db = await getDb();
+      await db.read();
+      if (!db.data) throw new Error('DB 데이터가 초기화되지 않았습니다.');
+
+      if (!db.data.payment_methods) {
+        db.data.payment_methods = [...defaultData.payment_methods];
+      }
+
+      const generateId = () => {
+        try {
+          return crypto.randomUUID();
+        } catch (e) {
+          return Date.now().toString() + Math.random().toString(36).substring(2, 9);
+        }
+      };
+
+      if (paymentMethod.id) {
+        const index = db.data.payment_methods.findIndex(pm => pm.id === paymentMethod.id);
+        if (index > -1) {
+          db.data.payment_methods[index] = { ...db.data.payment_methods[index], ...paymentMethod };
+        }
+      } else {
+        db.data.payment_methods.push({
+          id: generateId(),
+          name: paymentMethod.name || '미분류',
+          is_active: true
+        });
+      }
+      await db.write();
+      return true;
+    })
+  );
+
+  ipcMain.handle('delete-payment-method', (_event, id: string) =>
+    handleIpc('delete-payment-method', async () => {
+      const db = await getDb();
+      await db.read();
+      if (!db.data) throw new Error('DB 데이터가 초기화되지 않았습니다.');
+
+      if (!db.data.payment_methods) return false;
+
+      const index = db.data.payment_methods.findIndex(pm => pm.id === id);
+      if (index > -1) {
+        db.data.payment_methods[index] = { ...db.data.payment_methods[index], is_active: false };
         await db.write();
         return true;
       }
@@ -264,12 +325,15 @@ export function registerIpcHandlers() {
     } else {
       // Create a formatted data for Excel with Korean headers and category names
       const categories = db.data.categories || [];
+      const paymentMethods = db.data.payment_methods || [];
       const excelData = db.data.records.map(record => {
         const category = categories.find(c => c.id === record.category_id);
+        const paymentMethod = paymentMethods.find(pm => pm.id === record.payment_method_id);
         return {
           날짜: record.date,
           유형: record.type === 'income' ? '매출' : '매입',
           카테고리: category ? category.name : '기타',
+          결제방식: paymentMethod ? paymentMethod.name : '미지정',
           금액: record.amount, // Numeric value
           메모: record.note || ''
         };
@@ -282,6 +346,7 @@ export function registerIpcHandlers() {
         { wch: 20 }, // 날짜
         { wch: 10 }, // 유형
         { wch: 15 }, // 카테고리
+        { wch: 12 }, // 결제방식
         { wch: 12 }, // 금액
         { wch: 30 } // 메모
       ];
@@ -412,31 +477,30 @@ export function registerIpcHandlers() {
           type = 'income';
         }
 
-        // 4. Category Matching/Creation
+        // 4. Category Matching/Creation (no type distinction)
         let catNameClean = String(catName).trim();
-        let category = categories.find(c => c.name === catNameClean && c.type === type);
-
-        // If not found, try to find in inactive categories too
-        if (!category) {
-          category = categories.find(c => c.name === catNameClean && c.type === type);
-        }
+        let category = categories.find(c => c.name === catNameClean);
 
         if (!category) {
           category = {
             id: crypto.randomUUID(),
             name: catNameClean,
-            type: type,
             is_active: true
           };
           categories.push(category);
         }
 
-        // 5. Create Record
+        // 5. Payment Method (default to 카드)
+        const defaultPaymentMethod =
+          db.data.payment_methods.find(pm => pm.name === '카드') || db.data.payment_methods[0];
+
+        // 6. Create Record
         db.data.records.unshift({
           id: crypto.randomUUID(),
           date: dateStr,
           type: type,
           category_id: category.id,
+          payment_method_id: defaultPaymentMethod.id,
           amount: amount,
           note: String(note)
         });

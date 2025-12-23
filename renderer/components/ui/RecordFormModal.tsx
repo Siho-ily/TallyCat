@@ -23,10 +23,11 @@ export default function RecordFormModal({
   initialData,
   onSuccess
 }: RecordFormModalProps) {
-  const { categories, showAlert, showConfirm } = useData();
+  const { categories, paymentMethods, showAlert, showConfirm } = useData();
   const [formData, setFormData] = useState<Omit<Record, 'id'>>({
     type: 'income',
     category_id: '',
+    payment_method_id: '',
     amount: 0,
     date: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
     note: ''
@@ -34,10 +35,13 @@ export default function RecordFormModal({
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const defaultPM = paymentMethods.find(pm => pm.name === '카드') || paymentMethods[0];
+
     if (editingRecord) {
       setFormData({
         type: editingRecord.type,
         category_id: editingRecord.category_id,
+        payment_method_id: editingRecord.payment_method_id,
         amount: editingRecord.amount,
         date: editingRecord.date,
         note: editingRecord.note
@@ -45,16 +49,14 @@ export default function RecordFormModal({
     } else {
       setFormData({
         type: initialData?.type || 'income',
-        category_id:
-          initialData?.category_id ||
-          categories.find(c => c.type === (initialData?.type || 'income'))?.id ||
-          '',
+        category_id: initialData?.category_id || categories[0]?.id || '',
+        payment_method_id: initialData?.payment_method_id || defaultPM?.id || '',
         amount: initialData?.amount || 0,
         date: initialData?.date || DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
         note: initialData?.note || ''
       });
     }
-  }, [editingRecord, initialData, categories, isOpen]);
+  }, [editingRecord, initialData, categories, paymentMethods, isOpen]);
 
   // Force focus when modal opens
   useEffect(() => {
@@ -109,31 +111,6 @@ export default function RecordFormModal({
       icon={editingRecord ? <Edit3 size={20} /> : <PlusCircle size={20} />}
       footer={footer}>
       <form id="record-form" onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-2 gap-2 bg-white dark:bg-gray-950 p-1.5 rounded-[20px] border border-gray-200 dark:border-gray-800">
-          <Button
-            type="button"
-            variant={formData.type === 'income' ? 'primary' : 'ghost'}
-            className={`flex-1 !rounded-xl ${
-              formData.type === 'income' ? 'bg-emerald-500 hover:bg-emerald-400' : ''
-            }`}
-            onClick={() => {
-              setFormData({ ...formData, type: 'income', category_id: '' });
-            }}>
-            매출
-          </Button>
-          <Button
-            type="button"
-            variant={formData.type === 'expense' ? 'primary' : 'ghost'}
-            className={`flex-1 !rounded-xl ${
-              formData.type === 'expense' ? 'bg-rose-500 hover:bg-rose-400' : ''
-            }`}
-            onClick={() => {
-              setFormData({ ...formData, type: 'expense', category_id: '' });
-            }}>
-            매입
-          </Button>
-        </div>
-
         <div className="space-y-6">
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest pl-1">
@@ -148,10 +125,32 @@ export default function RecordFormModal({
                 카테고리를 선택하세요
               </option>
               {categories
-                .filter(c => c.type === formData.type && (c as any).is_active !== false)
+                .filter(c => (c as any).is_active !== false)
                 .map(c => (
                   <option key={c.id} value={c.id}>
                     {c.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-gray-600 dark:text-gray-500 uppercase tracking-widest pl-1">
+              결제 방식
+            </label>
+            <select
+              required
+              value={formData.payment_method_id}
+              onChange={e => setFormData({ ...formData, payment_method_id: e.target.value })}
+              className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl px-5 py-3.5 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/40 outline-none transition-all appearance-none cursor-pointer">
+              <option value="" disabled>
+                결제 방식을 선택하세요
+              </option>
+              {paymentMethods
+                .filter(pm => pm.is_active !== false)
+                .map(pm => (
+                  <option key={pm.id} value={pm.id}>
+                    {pm.name}
                   </option>
                 ))}
             </select>

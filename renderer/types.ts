@@ -2,6 +2,7 @@ export interface Record {
   id: string;
   type: 'income' | 'expense';
   category_id: string;
+  payment_method_id: string;
   amount: number;
   date: string;
   note: string;
@@ -9,7 +10,12 @@ export interface Record {
 
 export interface Category {
   id: string;
-  type: 'income' | 'expense';
+  name: string;
+  is_active: boolean;
+}
+
+export interface PaymentMethod {
+  id: string;
   name: string;
   is_active: boolean;
 }
