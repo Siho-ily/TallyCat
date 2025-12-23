@@ -1,9 +1,16 @@
 'use client';
 
 import React from 'react';
-import { Search as SearchIcon, ChevronLeft, ChevronRight, PieChart } from 'lucide-react';
+import {
+  Search as SearchIcon,
+  ChevronLeft,
+  ChevronRight,
+  PieChart,
+  Calendar as CalendarIcon,
+  ChevronDown
+} from 'lucide-react';
 import { DateTime } from 'luxon';
-import { Category } from '../../types';
+import { Category, PaymentMethod } from '../../types';
 import { Button, Input } from '../ui/InputControls';
 
 interface RecordFilterBarProps {
@@ -17,7 +24,10 @@ interface RecordFilterBarProps {
   setFilterType: (type: 'all' | 'income' | 'expense') => void;
   filterCategory: string;
   setFilterCategory: (id: string) => void;
+  filterPaymentMethod: string;
+  setFilterPaymentMethod: (id: string) => void;
   categories: Category[];
+  paymentMethods: PaymentMethod[];
   globalIncome: number;
   globalExpense: number;
 }
@@ -33,25 +43,50 @@ export default function RecordFilterBar({
   setFilterType,
   filterCategory,
   setFilterCategory,
+  filterPaymentMethod,
+  setFilterPaymentMethod,
   categories,
+  paymentMethods,
   globalIncome,
   globalExpense
 }: RecordFilterBarProps) {
+  const dateInputRef = React.useRef<HTMLInputElement>(null);
+
   const moveDate = (offset: number) => {
     setCurrentDate(currentDate.plus({ [period + 's']: offset }));
   };
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (!val) return;
+
+    if (period === 'year') {
+      setCurrentDate(currentDate.set({ year: parseInt(val) }));
+    } else if (period === 'month') {
+      const [y, m] = val.split('-');
+      setCurrentDate(currentDate.set({ year: parseInt(y), month: parseInt(m) }));
+    } else {
+      setCurrentDate(DateTime.fromISO(val));
+    }
+  };
+
   const getPeriodLabel = () => {
-    if (period === 'day') return currentDate.toFormat('yyyy.MM.dd');
+    if (period === 'day') return currentDate.toFormat('yyyy년 MM월 dd일');
     if (period === 'week') {
       const start = currentDate.startOf('week');
       const end = currentDate.endOf('week');
       return `${start.toFormat('MM.dd')} ~ ${end.toFormat('MM.dd')}`;
     }
-    if (period === 'month') return currentDate.toFormat('yyyy.MM');
-    if (period === 'year') return currentDate.toFormat('yyyy');
+    if (period === 'month') return currentDate.toFormat('yyyy년 MM월');
+    if (period === 'year') return currentDate.toFormat('yyyy년');
     return '';
   };
+
+  // Generate years for the year picker (current +/- 10 years)
+  const years = React.useMemo(() => {
+    const currentYear = DateTime.now().year;
+    return Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
+  }, []);
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-6 rounded-[32px] shadow-xl space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -93,13 +128,68 @@ export default function RecordFilterBar({
             ))}
           </div>
 
-          <div className="flex items-center gap-2 bg-white dark:bg-gray-950 p-1.5 rounded-2xl border border-gray-200 dark:border-gray-800 h-[42px] flex-1 md:flex-none md:min-w-[240px] justify-between">
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-950 p-1.5 rounded-2xl border border-gray-200 dark:border-gray-800 h-[42px] flex-1 md:flex-none md:min-w-[240px] justify-between relative group">
             <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveDate(-1)}>
               <ChevronLeft size={16} />
             </Button>
-            <span className="text-xs font-black text-gray-900 dark:text-white px-2">
-              {getPeriodLabel()}
-            </span>
+
+            <div className="flex-1 px-2 relative group/inner h-full flex items-center justify-center">
+              <div
+                onClick={() => {
+                  if (period === 'year') return;
+                  if (dateInputRef.current) {
+                    if (typeof (dateInputRef.current as any).showPicker === 'function') {
+                      (dateInputRef.current as any).showPicker();
+                    } else {
+                      dateInputRef.current.click();
+                    }
+                  }
+                }}
+                className={`flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl px-4 py-1.5 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-700 ${
+                  period === 'year' ? 'active:scale-95' : ''
+                }`}>
+                <CalendarIcon
+                  size={14}
+                  className="text-blue-500 opacity-70 group-hover/inner:opacity-100 transition-opacity"
+                />
+                <span className="text-[11px] font-black text-gray-950 dark:text-white whitespace-nowrap">
+                  {getPeriodLabel()}
+                </span>
+                <ChevronDown
+                  size={12}
+                  className="text-blue-500 dark:text-blue-400 group-hover/inner:translate-y-0.5 transition-transform"
+                />
+              </div>
+
+              {period === 'year' ? (
+                <select
+                  value={currentDate.year}
+                  onChange={handleDateChange}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full [color-scheme:light] dark:[color-scheme:dark]">
+                  {years.map(y => (
+                    <option
+                      key={y}
+                      value={y}
+                      className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                      {y}년
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  ref={dateInputRef}
+                  type={period === 'month' ? 'month' : 'date'}
+                  className="absolute opacity-0 w-0 h-0 pointer-events-none"
+                  value={
+                    period === 'month'
+                      ? currentDate.toFormat('yyyy-MM')
+                      : currentDate.toISODate() || ''
+                  }
+                  onChange={handleDateChange}
+                />
+              )}
+            </div>
+
             <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveDate(1)}>
               <ChevronRight size={16} />
             </Button>
@@ -112,26 +202,66 @@ export default function RecordFilterBar({
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value as any)}
-              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer text-gray-900 dark:text-white min-w-[80px]">
-              <option value="all">전체 유형</option>
-              <option value="income">매출</option>
-              <option value="expense">매입</option>
+              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer text-gray-900 dark:text-white min-w-[80px] [color-scheme:light] dark:[color-scheme:dark]">
+              <option
+                value="all"
+                className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                전체 유형
+              </option>
+              <option
+                value="income"
+                className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                매출
+              </option>
+              <option
+                value="expense"
+                className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                매입
+              </option>
             </select>
 
             <select
               value={filterCategory}
               onChange={e => setFilterCategory(e.target.value)}
-              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[130px] text-gray-900 dark:text-white">
-              <option value="all">전체 카테고리</option>
+              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[130px] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
+              <option
+                value="all"
+                className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                전체 카테고리
+              </option>
               {categories
                 .filter(
                   c =>
-                    (filterType === 'all' || c.type === filterType) &&
+                    (filterType === 'all' || (c as any).type === filterType) &&
                     (c as any).is_active !== false
                 )
                 .map(cat => (
-                  <option key={cat.id} value={cat.id}>
+                  <option
+                    key={cat.id}
+                    value={cat.id}
+                    className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
                     {cat.name}
+                  </option>
+                ))}
+            </select>
+
+            <select
+              value={filterPaymentMethod}
+              onChange={e => setFilterPaymentMethod(e.target.value)}
+              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[110px] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
+              <option
+                value="all"
+                className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                전체 결제방식
+              </option>
+              {paymentMethods
+                .filter(pm => pm.is_active !== false)
+                .map(pm => (
+                  <option
+                    key={pm.id}
+                    value={pm.id}
+                    className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                    {pm.name}
                   </option>
                 ))}
             </select>

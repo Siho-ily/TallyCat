@@ -9,6 +9,7 @@ interface UseRecordFiltersProps {
   categories: Category[];
   filterType: 'all' | 'income' | 'expense';
   filterCategory: string;
+  filterPaymentMethod: string;
   searchTerm: string;
   currentDate: DateTime;
   period: 'day' | 'week' | 'month' | 'year';
@@ -19,6 +20,7 @@ export function useRecordFilters({
   categories,
   filterType,
   filterCategory,
+  filterPaymentMethod,
   searchTerm,
   currentDate,
   period
@@ -26,9 +28,11 @@ export function useRecordFilters({
   return React.useMemo(() => {
     let result = [...records];
 
-    // 1. Type & Category Filter
+    // 1. Type, Category & Payment Method Filter
     if (filterType !== 'all') result = result.filter(r => r.type === filterType);
     if (filterCategory !== 'all') result = result.filter(r => r.category_id === filterCategory);
+    if (filterPaymentMethod !== 'all')
+      result = result.filter(r => r.payment_method_id === filterPaymentMethod);
 
     // 2. Search Filter
     if (searchTerm.trim()) {
@@ -54,5 +58,14 @@ export function useRecordFilters({
     });
 
     return result.sort((a, b) => b.date.localeCompare(a.date));
-  }, [records, filterType, filterCategory, searchTerm, currentDate, period, categories]);
+  }, [
+    records,
+    filterType,
+    filterCategory,
+    filterPaymentMethod,
+    searchTerm,
+    currentDate,
+    period,
+    categories
+  ]);
 }

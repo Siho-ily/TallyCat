@@ -3,9 +3,21 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
   body {
     @apply bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100;
     -webkit-font-smoothing: antialiased;
+  }
+
+  select option {
+    @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-white;
   }
 }
 

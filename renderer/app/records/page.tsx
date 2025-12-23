@@ -25,6 +25,7 @@ export default function RecordsPage() {
   const [currentDate, setCurrentDate] = useState(DateTime.now());
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
@@ -50,6 +51,7 @@ export default function RecordsPage() {
     categories,
     filterType,
     filterCategory,
+    filterPaymentMethod,
     searchTerm,
     currentDate,
     period
@@ -57,7 +59,7 @@ export default function RecordsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterType, filterCategory, searchTerm, currentDate, period, viewMode]);
+  }, [filterType, filterCategory, filterPaymentMethod, searchTerm, currentDate, period, viewMode]);
 
   const paginatedRecords = React.useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -171,7 +173,10 @@ export default function RecordsPage() {
         setFilterType={setFilterType}
         filterCategory={filterCategory}
         setFilterCategory={setFilterCategory}
+        filterPaymentMethod={filterPaymentMethod}
+        setFilterPaymentMethod={setFilterPaymentMethod}
         categories={categories}
+        paymentMethods={paymentMethods}
         globalIncome={globalTotals.income}
         globalExpense={globalTotals.expense}
       />
