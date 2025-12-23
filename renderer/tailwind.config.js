@@ -12,9 +12,12 @@ module.exports = {
       // use colors only specified
       white: colors.white,
       gray: colors.gray,
+      slate: colors.slate,
       blue: colors.blue,
       emerald: colors.emerald,
       rose: colors.rose,
+      amber: colors.amber,
+      orange: colors.orange,
       purple: colors.purple,
       transparent: 'transparent',
       current: 'currentColor'

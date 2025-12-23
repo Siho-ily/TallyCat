@@ -268,41 +268,45 @@ export default function RevenueAnalysis({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800 text-[10px] font-black uppercase text-gray-500 tracking-widest">
+              <tr className="border-t-2 border-b border-slate-200 dark:border-slate-800 text-[11px] font-black uppercase text-slate-500 tracking-widest bg-slate-50/30 dark:bg-slate-900/30">
                 <th className="px-6 py-4">카테고리</th>
                 <th className="px-6 py-4 text-right">거래수</th>
-                <th className="px-6 py-4 text-right">매출금액</th>
-                <th className="px-6 py-4 text-right">전월 대비 증감</th>
-                <th className="px-6 py-4 text-right">비중</th>
+                <th className="px-6 py-4 text-right bg-slate-100/50 dark:bg-slate-800/50">
+                  매출금액
+                </th>
+                <th className="px-6 py-4 text-right">전월 대비 증감(%)</th>
+                <th className="px-6 py-4 text-right w-[150px]">비중(%)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-gray-900">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
               {tableData.map(row => (
                 <tr
                   key={row.id}
-                  className={`group hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-all ${
+                  className={`group transition-all hover:bg-slate-50/50 dark:hover:bg-slate-800/30 ${
                     row.isTotal
-                      ? 'bg-gray-50/50 dark:bg-gray-900/30 ring-1 ring-inset ring-gray-100 dark:ring-gray-800'
+                      ? 'bg-slate-50 dark:bg-slate-900/80 font-black border-y border-slate-200 dark:border-slate-700'
                       : ''
                   }`}>
                   <td className="px-6 py-4 font-black text-sm text-gray-900 dark:text-gray-100">
                     <span
                       className={
                         row.isTotal
-                          ? 'underline decoration-gray-200 dark:decoration-gray-700 underline-offset-4'
-                          : ''
+                          ? 'text-lg underline decoration-blue-500/20 underline-offset-4'
+                          : 'text-slate-700 dark:text-slate-300'
                       }>
                       {row.name}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right font-bold text-sm text-gray-600 dark:text-gray-400">
-                    {row.count.toLocaleString()}건
+                  <td className="px-6 py-4 text-right font-bold text-sm text-slate-500 dark:text-slate-400">
+                    {row.count === 0 ? '-' : `${row.count.toLocaleString()}건`}
                   </td>
                   <td
-                    className={`px-6 py-4 text-right font-black ${
-                      row.isTotal ? 'text-blue-600 text-base' : 'text-sm text-blue-500'
+                    className={`px-6 py-4 text-right font-black bg-slate-100/30 dark:bg-slate-800/30 ${
+                      row.isTotal
+                        ? 'text-blue-600 dark:text-blue-400 text-lg underline underline-offset-4 decoration-blue-500/30'
+                        : 'text-sm text-blue-500'
                     }`}>
-                    {row.amount.toLocaleString()}원
+                    {row.amount === 0 ? '-' : `${row.amount.toLocaleString()}원`}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div
@@ -311,35 +315,33 @@ export default function RevenueAnalysis({
                           ? 'text-emerald-500'
                           : row.diff < 0
                           ? 'text-rose-500'
-                          : 'text-gray-400'
+                          : 'text-slate-400'
                       }`}>
-                      {row.diff > 0 ? (
-                        <ArrowUpRight size={14} />
-                      ) : row.diff < 0 ? (
-                        <ArrowDownRight size={14} />
-                      ) : (
-                        <Minus size={14} />
-                      )}
-                      <span>{Math.abs(row.diff).toLocaleString()}원</span>
                       {row.diff !== 0 && (
-                        <span className="opacity-60 text-[9px]">
-                          ({row.diffPercent.toFixed(1)}%)
-                        </span>
+                        <>
+                          {row.diff > 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                          <span>{Math.abs(row.diffPercent).toFixed(1)}%</span>
+                        </>
                       )}
+                      {row.diff === 0 && <Minus size={14} />}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${row.share}%` }}
-                        />
-                      </div>
-                      <span className="text-[11px] font-black text-gray-500 min-w-[35px]">
-                        {row.share.toFixed(1)}%
-                      </span>
-                    </div>
+                  <td className="px-6 py-4 text-right relative p-0 overflow-hidden">
+                    {/* Bar Fill for Share */}
+                    <div
+                      className={`absolute inset-y-0 left-0 transition-all duration-1000 ease-out z-0 ${
+                        row.isTotal
+                          ? 'bg-blue-500/50 dark:bg-blue-400/40'
+                          : 'bg-blue-500/70 dark:bg-blue-400/60'
+                      }`}
+                      style={{ width: `${Math.min(100, row.share)}%` }}
+                    />
+                    <span
+                      className={`relative z-10 px-6 py-4 block text-xs font-black ${
+                        row.isTotal ? 'text-slate-900 dark:text-white' : 'text-slate-500'
+                      }`}>
+                      {row.share.toFixed(1)}%
+                    </span>
                   </td>
                 </tr>
               ))}

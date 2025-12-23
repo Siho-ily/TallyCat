@@ -49,6 +49,12 @@ export async function runAutomations() {
 
     if (recordsAdded > 0) {
       await db.write();
+
+      // Notify all renderers that data has updated
+      const { BrowserWindow } = require('electron');
+      BrowserWindow.getAllWindows().forEach((win: any) => {
+        win.webContents.send('refresh-data');
+      });
     }
   } catch (error) {
     console.error('[Automation] Error running automations:', error);

@@ -116,6 +116,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshData();
+
+    // Listen for background updates (e.g., from automation or other windows)
+    const cleanup = (window as any).ipc.on('refresh-data', () => {
+      console.log('Data update triggered from background...');
+      refreshData();
+    });
+
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, [refreshData]);
 
   return (
