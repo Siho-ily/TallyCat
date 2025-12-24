@@ -30,7 +30,7 @@ export default function RecordsPage() {
   const { records, categories, paymentMethods, loading, refreshData } = useData();
 
   // Filtering states
-  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year' | 'all'>('month');
+  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year' | 'all'>('day');
   const [currentDate, setCurrentDate] = useState(DateTime.now());
   const [startDate, setStartDate] = useState(DateTime.now().startOf('month'));
   const [endDate, setEndDate] = useState(DateTime.now().endOf('month'));
