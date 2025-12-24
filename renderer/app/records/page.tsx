@@ -286,6 +286,8 @@ export default function RecordsPage() {
           <WeeklySummaryView
             currentDate={currentDate}
             records={records}
+            totalIncome={totals.income}
+            totalExpense={totals.expense}
             onDayClick={date => {
               setCurrentDate(date);
               setPeriod('day');
@@ -296,6 +298,8 @@ export default function RecordsPage() {
         {(period === 'month' || period === 'year') && (
           <CalendarView
             calendarDays={calendarDays}
+            totalIncome={totals.income}
+            totalExpense={totals.expense}
             onDayClick={date => {
               setCurrentDate(date);
               setPeriod('day');

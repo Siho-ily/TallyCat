@@ -13,10 +13,17 @@ interface CalendarDay {
 
 interface CalendarViewProps {
   calendarDays: CalendarDay[];
+  totalIncome: number;
+  totalExpense: number;
   onDayClick: (date: DateTime) => void;
 }
 
-export default function CalendarView({ calendarDays, onDayClick }: CalendarViewProps) {
+export default function CalendarView({
+  calendarDays,
+  totalIncome,
+  totalExpense,
+  onDayClick
+}: CalendarViewProps) {
   return (
     <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-[40px] overflow-hidden shadow-2xl p-8 animate-in zoom-in-95 duration-500">
       <div className="grid grid-cols-7 gap-1">
@@ -93,6 +100,41 @@ export default function CalendarView({ calendarDays, onDayClick }: CalendarViewP
             </div>
           );
         })}
+      </div>
+
+      {/* Monthly Total Summary Section */}
+      <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+        <div className="bg-white dark:bg-gray-950 rounded-[32px] border border-gray-200 dark:border-gray-800 p-6 flex flex-wrap items-center justify-center gap-10 md:gap-16 shadow-sm">
+          <div className="flex flex-wrap items-center gap-10 lg:gap-16">
+            <div className="text-center">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                총 매출 (+)
+              </p>
+              <p className="text-lg font-black text-emerald-500">
+                +{totalIncome.toLocaleString()}원
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                총 비용 (-)
+              </p>
+              <p className="text-lg font-black text-rose-500">-{totalExpense.toLocaleString()}원</p>
+            </div>
+            <div className="h-10 w-[1px] bg-gray-100 dark:bg-gray-800 hidden sm:block" />
+            <div className="text-center">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                월간 총 순익
+              </p>
+              <p
+                className={`text-2xl font-black ${
+                  totalIncome - totalExpense >= 0 ? 'text-blue-500' : 'text-rose-500'
+                }`}>
+                {totalIncome - totalExpense >= 0 ? '+' : ''}
+                {(totalIncome - totalExpense).toLocaleString()}원
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
