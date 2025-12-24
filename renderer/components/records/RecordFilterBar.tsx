@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { Category, PaymentMethod } from '../../types';
-import { Button, Input } from '../ui/InputControls';
+import { Button, Input, Toggle } from '../ui/InputControls';
 import { getMonthWeekRange, moveMonthWeek } from '../../lib/dateUtils';
 
 interface RecordFilterBarProps {
@@ -31,6 +31,8 @@ interface RecordFilterBarProps {
   paymentMethods: PaymentMethod[];
   globalIncome: number;
   globalExpense: number;
+  showDetail: boolean;
+  setShowDetail: (show: boolean) => void;
 }
 
 export default function RecordFilterBar({
@@ -49,7 +51,9 @@ export default function RecordFilterBar({
   categories,
   paymentMethods,
   globalIncome,
-  globalExpense
+  globalExpense,
+  showDetail,
+  setShowDetail
 }: RecordFilterBarProps) {
   const dateInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -208,6 +212,21 @@ export default function RecordFilterBar({
             <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveDate(1)}>
               <ChevronRight size={16} />
             </Button>
+          </div>
+
+          <div className="flex-1 flex justify-end">
+            <div
+              className={`bg-white dark:bg-gray-950 px-4 py-1.5 rounded-2xl border border-gray-200 dark:border-gray-800 flex items-center gap-3 h-[42px] transition-all ${
+                period === 'day' ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''
+              }`}>
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap">
+                상세 정보
+              </span>
+              <Toggle
+                checked={period === 'day' ? true : showDetail}
+                onChange={period === 'day' ? () => {} : setShowDetail}
+              />
+            </div>
           </div>
         </div>
 

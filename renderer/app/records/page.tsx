@@ -14,11 +14,11 @@ import PageHeader from '../../components/ui/PageHeader';
 import RecordFilterBar from '../../components/records/RecordFilterBar';
 import RecordTable from '../../components/records/RecordTable';
 import CalendarView from '../../components/records/CalendarView';
+import WeeklySummaryView from '../../components/records/WeeklySummaryView';
 import { Button } from '../../components/ui/InputControls';
 
 export default function RecordsPage() {
   const { records, categories, paymentMethods, loading, refreshData } = useData();
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   // Filtering states
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
@@ -33,6 +33,7 @@ export default function RecordsPage() {
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [initialData, setInitialData] = useState<any>(null);
+  const [showDetail, setShowDetail] = useState(false);
 
   const handleOpenAddModal = (date?: DateTime) => {
     setEditingRecord(null);
@@ -57,7 +58,7 @@ export default function RecordsPage() {
 
   useEffect(() => {
     // Reset any view state if needed
-  }, [filterType, filterCategory, filterPaymentMethod, searchTerm, currentDate, period, viewMode]);
+  }, [filterType, filterCategory, filterPaymentMethod, searchTerm, currentDate, period]);
 
   const totals = React.useMemo(() => {
     return filteredRecords.reduce(
@@ -130,34 +131,9 @@ export default function RecordsPage() {
             : `${currentDate.toFormat('yyyy년 MM월 dd일')} 상세 내역입니다.`
         }
         actions={
-          <>
-            <div className="flex bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-1 rounded-xl scale-90 shadow-inner">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === 'list'
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                    : 'text-gray-500 hover:text-gray-300'
-                }`}>
-                <List size={18} />
-              </button>
-              <button
-                onClick={() => {
-                  setViewMode('calendar');
-                  setPeriod('month'); // Always month for calendar
-                }}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === 'calendar'
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                    : 'text-gray-500 hover:text-gray-300'
-                }`}>
-                <CalendarIcon size={18} />
-              </button>
-            </div>
-            <Button onClick={() => handleOpenAddModal()} icon={<PlusCircle size={18} />}>
-              내역 추가
-            </Button>
-          </>
+          <Button onClick={() => handleOpenAddModal()} icon={<PlusCircle size={18} />}>
+            내역 추가
+          </Button>
         }
       />
 
@@ -178,14 +154,17 @@ export default function RecordsPage() {
         paymentMethods={paymentMethods}
         globalIncome={globalTotals.income}
         globalExpense={globalTotals.expense}
+        showDetail={showDetail}
+        setShowDetail={setShowDetail}
       />
 
-      {viewMode === 'list' ? (
+      {period === 'day' && (
         <RecordTable
           records={filteredRecords}
           categories={categories}
           paymentMethods={paymentMethods}
           period={period}
+          showDetail={true}
           onRecordClick={record => {
             setSelectedRecord(record);
             setIsDetailModalOpen(true);
@@ -193,8 +172,27 @@ export default function RecordsPage() {
           totalIncome={totals.income}
           totalExpense={totals.expense}
         />
-      ) : (
-        <CalendarView calendarDays={calendarDays} onDayClick={handleOpenAddModal} />
+      )}
+
+      {period === 'week' && (
+        <WeeklySummaryView
+          currentDate={currentDate}
+          records={records}
+          onDayClick={date => {
+            setCurrentDate(date);
+            setPeriod('day');
+          }}
+        />
+      )}
+
+      {(period === 'month' || period === 'year') && (
+        <CalendarView
+          calendarDays={calendarDays}
+          onDayClick={date => {
+            setCurrentDate(date);
+            setPeriod('day');
+          }}
+        />
       )}
 
       {/* Modals */}

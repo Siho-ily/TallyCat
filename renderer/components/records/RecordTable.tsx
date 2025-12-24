@@ -9,6 +9,7 @@ interface RecordTableProps {
   paymentMethods: PaymentMethod[];
   onRecordClick: (record: Record) => void;
   period?: 'day' | 'week' | 'month' | 'year'; // Added period prop
+  showDetail?: boolean;
   netProfit?: number;
   totalIncome?: number;
   totalExpense?: number;
@@ -21,6 +22,7 @@ export default function RecordTable({
   paymentMethods,
   onRecordClick,
   period = 'day',
+  showDetail = false,
   netProfit = 0,
   totalIncome,
   totalExpense,
@@ -88,16 +90,59 @@ export default function RecordTable({
           .reduce((s, r) => s + r.amount, 0);
 
         rows.push(
-          <tr key={`header-${currentDate}`} className="bg-gray-100/80 dark:bg-gray-800/40">
-            <td colSpan={5} className="px-6 py-2.5">
+          <tr
+            key={`header-${currentDate}`}
+            className={`transition-all duration-300 ${
+              showDetail
+                ? 'bg-gray-100/80 dark:bg-gray-800/40'
+                : 'bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900 border-b border-gray-100 dark:border-gray-800'
+            }`}>
+            <td colSpan={5} className={`px-6 ${showDetail ? 'py-2.5' : 'py-5'}`}>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50"></div>
-                  {DateTime.fromISO(currentDate).setLocale('ko').toFormat('M월 d일 (ccc)')}
-                </span>
-                <div className="flex gap-4 text-[10px] font-bold">
-                  <span className="text-emerald-500">매출: +{dayIncome.toLocaleString()}원</span>
-                  <span className="text-rose-500">비용: -{dayExpense.toLocaleString()}원</span>
+                <div className="flex items-center gap-4">
+                  <div className={`flex flex-col ${showDetail ? '' : 'gap-0.5'}`}>
+                    <span
+                      className={`font-black text-gray-900 dark:text-gray-100 flex items-center gap-2 ${
+                        showDetail ? 'text-[11px]' : 'text-sm'
+                      }`}>
+                      {showDetail && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50"></div>
+                      )}
+                      {DateTime.fromISO(currentDate)
+                        .setLocale('ko')
+                        .toFormat(showDetail ? 'M월 d일 (ccc)' : 'yyyy년 M월 d일')}
+                    </span>
+                    {!showDetail && (
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">
+                        {DateTime.fromISO(currentDate).setLocale('ko').toFormat('cccc')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-8 lg:gap-16">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-tight mb-0.5">
+                      매출 / 비용
+                    </span>
+                    <div className="flex gap-4 text-[11px] font-bold">
+                      <span className="text-emerald-500">+{dayIncome.toLocaleString()}</span>
+                      <span className="text-rose-500">-{dayExpense.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end min-w-[100px]">
+                    <span className="text-[9px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-tight mb-0.5">
+                      일일 정산 순익
+                    </span>
+                    <span
+                      className={`font-black ${showDetail ? 'text-xs' : 'text-base'} ${
+                        dayIncome - dayExpense >= 0 ? 'text-blue-500' : 'text-rose-500'
+                      }`}>
+                      {dayIncome - dayExpense >= 0 ? '+' : ''}
+                      {(dayIncome - dayExpense).toLocaleString()}원
+                    </span>
+                  </div>
                 </div>
               </div>
             </td>
@@ -105,15 +150,18 @@ export default function RecordTable({
         );
         lastDate = currentDate;
       }
-      rows.push(
-        <RecordRow
-          key={record.id}
-          record={record}
-          categories={categories}
-          paymentMethods={paymentMethods}
-          onClick={onRecordClick}
-        />
-      );
+
+      if (showDetail) {
+        rows.push(
+          <RecordRow
+            key={record.id}
+            record={record}
+            categories={categories}
+            paymentMethods={paymentMethods}
+            onClick={onRecordClick}
+          />
+        );
+      }
     });
 
     return rows;
