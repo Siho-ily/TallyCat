@@ -490,41 +490,86 @@ export function registerIpcHandlers() {
 
       for (const row of rows) {
         // 1. Column Mapping (Flexible search)
-        const findValue = (keywords: string[]) => {
-          const key = Object.keys(row).find(k =>
+        const rowKeys = Object.keys(row);
+        const findVal = (keywords: string[]) => {
+          const key = rowKeys.find(k =>
             keywords.some(kw => k.toLowerCase().includes(kw.toLowerCase()))
           );
           return key ? row[key] : null;
         };
 
-        let rawDate = findValue(['날짜', '일자', 'date', '시간']);
-        let rawAmount = findValue(['금액', '합계', 'amount', '가격']);
-        let rawType = findValue(['유형', '구분', 'type', '수입', '매출', '지출', '매입']);
-        let catName = findValue(['카테고리', '항목', 'category', '분류']) || '미지정';
-        let note = findValue(['메모', '비고', 'note', '설명']) || '';
+        // Find specific columns (Income vs Expense vs Generic Amount)
+        const incomeVal = findVal(['수입', '매출', 'income', 'deposit']);
+        const expenseVal = findVal([
+          '지출',
+          '매입',
+          '비용',
+          'spending',
+          'purchase',
+          'expense',
+          'withdraw'
+        ]);
+        const amountVal = findVal(['금액', '합계', 'amount', '가격', '원금']);
+        const typeMarker = findVal(['유형', '구분', 'type']);
 
-        // Essential: Amount
-        const amount = Number(String(rawAmount || '').replace(/[^0-9.-]+/g, ''));
+        const rawDate = findVal(['날짜', '일자', 'date', '시간']);
+        const catName = findVal(['카테고리', '항목', 'category', '분류']) || '미지정';
+        const note = findVal(['메모', '비고', 'note', '설명']) || '';
+        const pmName = findVal(['결제', '방식', 'payment', 'method', '수단']);
+
+        // Determine Type and Amount
+        let type: 'income' | 'purchase' | 'spending' = 'income';
+        let amount = 0;
+
+        // Choice: Use separate columns if they exist
+        if (
+          incomeVal !== null &&
+          incomeVal !== undefined &&
+          String(incomeVal).trim() !== '' &&
+          Number(incomeVal) !== 0
+        ) {
+          type = 'income';
+          amount = Math.abs(Number(String(incomeVal).replace(/[^0-9.-]+/g, '')));
+        } else if (
+          expenseVal !== null &&
+          expenseVal !== undefined &&
+          String(expenseVal).trim() !== '' &&
+          Number(expenseVal) !== 0
+        ) {
+          type = 'spending'; // Default to spending
+          amount = Math.abs(Number(String(expenseVal).replace(/[^0-9.-]+/g, '')));
+        } else if (amountVal !== null) {
+          amount = Math.abs(Number(String(amountVal).replace(/[^0-9.-]+/g, '')));
+          const ts = String(typeMarker || '').toLowerCase();
+          if (ts.includes('지출') || ts.includes('spending')) type = 'spending';
+          else if (ts.includes('매입') || ts.includes('purchase')) type = 'purchase';
+          else type = 'income';
+        }
+
         if (isNaN(amount) || amount === 0) continue;
+        amount = Math.round(amount);
 
         // 2. Date Parsing
         let dateStr: string;
         if (typeof rawDate === 'number' && rawDate > 30000) {
-          // Excel serial date to ISO
-          const date = new Date((rawDate - 25569) * 86400 * 1000);
-          dateStr = DateTime.fromJSDate(date).toFormat('yyyy-MM-dd HH:mm:ss');
+          const date = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+          dateStr = DateTime.fromJSDate(date, { zone: 'utc' }).toFormat('yyyy-MM-dd HH:mm:ss');
         } else if (rawDate) {
-          let s = String(rawDate).trim().replace(/\./g, '-'); // . 을 - 로 치환하여 범용성 확보
-
-          // Try various formats
-          const dt =
-            DateTime.fromFormat(s, 'yyyy-MM-dd HH:mm:ss') ||
-            DateTime.fromFormat(s, 'yyyy-MM-dd HH:mm') ||
-            DateTime.fromFormat(s, 'yyyy-MM-dd') ||
-            DateTime.fromFormat(s, 'MM/dd/yyyy HH:mm:ss') ||
-            DateTime.fromFormat(s, 'MM/dd/yyyy') ||
-            DateTime.fromISO(s);
-
+          let s = String(rawDate).trim();
+          const formats = [
+            'yyyy-MM-dd HH:mm:ss',
+            'yyyy-MM-dd HH:mm',
+            'yyyy-MM-dd',
+            'MM/dd/yyyy',
+            'yyyy.MM.dd',
+            'yyyy/MM/dd'
+          ];
+          let dt: DateTime = DateTime.invalid('not started');
+          for (const f of formats) {
+            dt = DateTime.fromFormat(s, f);
+            if (dt.isValid) break;
+          }
+          if (!dt.isValid) dt = DateTime.fromISO(s);
           dateStr = dt.isValid
             ? dt.toFormat('yyyy-MM-dd HH:mm:ss')
             : DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss');
@@ -532,74 +577,31 @@ export function registerIpcHandlers() {
           dateStr = DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss');
         }
 
-        // 3. Type Detection
-        let type: 'income' | 'purchase' | 'spending' = 'income';
-        const typeStr = String(rawType || '').toLowerCase();
-        if (typeStr.includes('지출') || typeStr.includes('spending')) {
-          type = 'spending';
-        } else if (
-          typeStr.includes('매입') ||
-          typeStr.includes('purchase') ||
-          typeStr.includes('expense') ||
-          typeStr.includes('out')
-        ) {
-          type = 'purchase';
-        } else if (
-          typeStr.includes('수입') ||
-          typeStr.includes('매출') ||
-          typeStr.includes('income') ||
-          typeStr.includes('in')
-        ) {
-          type = 'income';
-        }
-
-        // 4. Category Handling
-        let catNameClean = String(catName).trim();
-        let categoryId = ''; // Default to "미지정" (empty string ID)
-
-        if (catNameClean && catNameClean !== '미지정') {
-          let category = categories.find(c => c.name === catNameClean);
+        // 3. Category & PM
+        let categoryId = '';
+        const cleanCat = String(catName).trim();
+        if (cleanCat && cleanCat !== '미지정') {
+          let category = db.data.categories.find(c => c.name === cleanCat);
           if (!category) {
-            category = {
-              id: crypto.randomUUID(),
-              name: catNameClean,
-              type: type, // Assign current record type
-              is_active: true
-            };
-            categories.push(category);
+            category = { id: crypto.randomUUID(), name: cleanCat, type, is_active: true };
+            db.data.categories.push(category);
           }
           categoryId = category.id;
         }
 
-        // 5. Payment Method Handling
-        const paymentMethods = db.data.payment_methods;
-        const rawPm = findValue(['결제', '방식', 'payment', 'method', '수단']);
-        let paymentMethodId = ''; // Default to "미지정" (empty string ID)
-
-        if (rawPm) {
-          const pmNameClean = String(rawPm).trim();
-          if (pmNameClean && pmNameClean !== '미지정') {
-            // 1. Try exact name match
-            let matchedPm = paymentMethods.find(pm => pm.name === pmNameClean);
-
-            // 2. Keyword matching for common types (Cash/Card)
+        let paymentMethodId = '';
+        if (pmName) {
+          const cleanPm = String(pmName).trim();
+          if (cleanPm && cleanPm !== '미지정') {
+            let matchedPm = db.data.payment_methods.find(
+              p =>
+                p.name === cleanPm ||
+                (cleanPm.includes('현금') && p.name.includes('현금')) ||
+                (cleanPm.includes('카드') && p.name.includes('카드'))
+            );
             if (!matchedPm) {
-              const pmStrLower = pmNameClean.toLowerCase();
-              if (pmStrLower.includes('cash') || pmStrLower.includes('현금')) {
-                matchedPm = paymentMethods.find(pm => pm.name.includes('현금'));
-              } else if (pmStrLower.includes('card') || pmStrLower.includes('카드')) {
-                matchedPm = paymentMethods.find(pm => pm.name.includes('카드'));
-              }
-            }
-
-            // 3. Create new one if still no match
-            if (!matchedPm) {
-              matchedPm = {
-                id: crypto.randomUUID(),
-                name: pmNameClean,
-                is_active: true
-              };
-              paymentMethods.push(matchedPm);
+              matchedPm = { id: crypto.randomUUID(), name: cleanPm, is_active: true };
+              db.data.payment_methods.push(matchedPm);
             }
             paymentMethodId = matchedPm.id;
           }
@@ -609,10 +611,10 @@ export function registerIpcHandlers() {
         db.data.records.unshift({
           id: crypto.randomUUID(),
           date: dateStr,
-          type: type,
+          type,
           category_id: categoryId,
           payment_method_id: paymentMethodId,
-          amount: amount,
+          amount,
           note: String(note)
         });
         importedCount++;

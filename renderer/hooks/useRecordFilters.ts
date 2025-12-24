@@ -63,8 +63,12 @@ export function useRecordFilters({
     }
 
     result = result.filter(r => {
-      const d = DateTime.fromFormat(r.date, 'yyyy-MM-dd HH:mm:ss');
-      return d >= start && d <= end;
+      // Use logic similar to helper to be robust
+      let d = DateTime.fromFormat(r.date, 'yyyy-MM-dd HH:mm:ss');
+      if (!d.isValid) d = DateTime.fromISO(r.date);
+      if (!d.isValid) d = DateTime.fromSQL(r.date);
+
+      return d.isValid && d >= start && d <= end;
     });
 
     return result.sort((a, b) => b.date.localeCompare(a.date));

@@ -82,8 +82,17 @@ export function getMonthWeekRange(date: DateTime): DateRange {
   }
 
   // Find which week contains the requested date
-  const targetWeek = weeks.find(w => date >= w.start && date <= w.end);
-  return targetWeek || { start: startOfMonth, end: endOfMonth }; // Fallback
+  const targetDay = date.startOf('day');
+  const targetWeek = weeks.find(
+    w => targetDay >= w.start.startOf('day') && targetDay <= w.end.startOf('day')
+  );
+
+  if (!targetWeek) {
+    // Fallback to the last week if it's the very end of the month or something went wrong
+    return weeks[weeks.length - 1] || { start: startOfMonth, end: endOfMonth };
+  }
+
+  return targetWeek;
 }
 
 export function moveMonthWeek(date: DateTime, offset: number): DateTime {
