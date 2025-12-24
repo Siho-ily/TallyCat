@@ -3,22 +3,28 @@
 import React from 'react';
 import PageHeader from '../../components/ui/PageHeader';
 
-// Refactored Components
-import RecordsGuide from '../../components/guide/RecordsGuide';
+// Guide Components
+import GettingStartedGuide from '../../components/guide/GettingStartedGuide';
+import RecordsManagementGuide from '../../components/guide/RecordsManagementGuide';
 import AnalysisGuide from '../../components/guide/AnalysisGuide';
+import AutomationGuide from '../../components/guide/AutomationGuide';
+import SettingsBackupGuide from '../../components/guide/SettingsBackupGuide';
 import DataSafetyGuide from '../../components/guide/DataSafetyGuide';
 
 export default function GuidePage() {
   return (
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-500 pb-20 max-w-4xl mx-auto">
       <PageHeader
-        title="프로그램 가이드"
-        description="SPMS (Sales and Purchase Management System)를 처음 사용하시나요? 주요 기능과 활용 팁을 안내해 드립니다."
+        title="탤리캣 사용 가이드"
+        description="탤리캣 (TallyCat) 의 모든 기능을 단계별로 안내해 드립니다. 처음 사용하시는 분도 쉽게 따라할 수 있습니다."
       />
 
       <div className="space-y-12">
-        <RecordsGuide />
+        <GettingStartedGuide />
+        <RecordsManagementGuide />
         <AnalysisGuide />
+        <AutomationGuide />
+        <SettingsBackupGuide />
         <DataSafetyGuide />
       </div>
     </div>
