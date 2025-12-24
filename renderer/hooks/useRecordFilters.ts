@@ -3,6 +3,7 @@
 import React from 'react';
 import { DateTime } from 'luxon';
 import { Record, Category } from '../types';
+import { getMonthWeekRange } from '../lib/dateUtils';
 
 interface UseRecordFiltersProps {
   records: Record[];
@@ -49,8 +50,17 @@ export function useRecordFilters({
     }
 
     // 3. Period Filter
-    const start = currentDate.startOf(period);
-    const end = currentDate.endOf(period);
+    let start: DateTime;
+    let end: DateTime;
+
+    if (period === 'week') {
+      const range = getMonthWeekRange(currentDate);
+      start = range.start;
+      end = range.end.endOf('day'); // Ensure we cover the full last day
+    } else {
+      start = currentDate.startOf(period);
+      end = currentDate.endOf(period);
+    }
 
     result = result.filter(r => {
       const d = DateTime.fromFormat(r.date, 'yyyy-MM-dd HH:mm:ss');

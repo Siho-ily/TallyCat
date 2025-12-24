@@ -12,6 +12,7 @@ import {
 import { DateTime } from 'luxon';
 import { Category, PaymentMethod } from '../../types';
 import { Button, Input } from '../ui/InputControls';
+import { getMonthWeekRange, moveMonthWeek } from '../../lib/dateUtils';
 
 interface RecordFilterBarProps {
   period: 'day' | 'week' | 'month' | 'year';
@@ -53,7 +54,11 @@ export default function RecordFilterBar({
   const dateInputRef = React.useRef<HTMLInputElement>(null);
 
   const moveDate = (offset: number) => {
-    setCurrentDate(currentDate.plus({ [period + 's']: offset }));
+    if (period === 'week') {
+      setCurrentDate(moveMonthWeek(currentDate, offset));
+    } else {
+      setCurrentDate(currentDate.plus({ [period + 's']: offset }));
+    }
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -73,9 +78,19 @@ export default function RecordFilterBar({
   const getPeriodLabel = () => {
     if (period === 'day') return currentDate.toFormat('yyyy년 MM월 dd일');
     if (period === 'week') {
-      const start = currentDate.startOf('week');
-      const end = currentDate.endOf('week');
-      return `${start.toFormat('MM.dd')} ~ ${end.toFormat('MM.dd')}`;
+      const { start, end } = getMonthWeekRange(currentDate);
+      const firstDayOfMonth = currentDate.startOf('month');
+      // Calculate day of month for the first Saturday
+      const firstSatDate = 1 + ((6 - firstDayOfMonth.weekday + 7) % 7);
+
+      let weekNum = 1;
+      if (currentDate.day > firstSatDate) {
+        weekNum = 1 + Math.ceil((currentDate.day - firstSatDate) / 7);
+      }
+
+      return `${start.toFormat('MM.dd')} ~ ${end.toFormat('MM.dd')} (${currentDate.toFormat(
+        'MM'
+      )}월 ${weekNum}주)`;
     }
     if (period === 'month') return currentDate.toFormat('yyyy년 MM월');
     if (period === 'year') return currentDate.toFormat('yyyy년');
@@ -116,14 +131,14 @@ export default function RecordFilterBar({
         {/* 2nd Row: Period Controls (Horizontal) */}
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
           <div className="flex p-1 bg-white dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-800 shrink-0">
-            {(['day', 'month'] as const).map(p => (
+            {(['day', 'week', 'month'] as const).map(p => (
               <Button
                 key={p}
                 variant={period === p ? 'primary' : 'ghost'}
                 size="sm"
                 className="!text-[10px] !px-4 !rounded-xl"
                 onClick={() => setPeriod(p)}>
-                {p === 'day' ? '일일' : '월간'}
+                {p === 'day' ? '일일' : p === 'week' ? '주간' : '월간'}
               </Button>
             ))}
           </div>

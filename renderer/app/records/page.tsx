@@ -7,6 +7,7 @@ import { DateTime } from 'luxon';
 import { useData } from '../../context/DataContext';
 import { useCalendarData } from '../../hooks/useCalendarData';
 import { useRecordFilters } from '../../hooks/useRecordFilters';
+import { getMonthWeekRange } from '../../lib/dateUtils';
 import RecordFormModal from '../../components/ui/RecordFormModal';
 import RecordDetailModal from '../../components/ui/RecordDetailModal';
 import PageHeader from '../../components/ui/PageHeader';
@@ -122,6 +123,10 @@ export default function RecordsPage() {
         description={
           period === 'month'
             ? `${currentDate.toFormat('yyyy년 MM월')} 매장 거래 내역입니다.`
+            : period === 'week'
+            ? `${getMonthWeekRange(currentDate).start.toFormat('MM월 dd일')} ~ ${getMonthWeekRange(
+                currentDate
+              ).end.toFormat('MM월 dd일')} 주간 내역입니다.`
             : `${currentDate.toFormat('yyyy년 MM월 dd일')} 상세 내역입니다.`
         }
         actions={
