@@ -298,7 +298,7 @@ async function migrate(db: Low<Data>) {
 
     // Default Paths (Migration for older versions)
     const docsPath = app.getPath('documents');
-    const defaultBase = path.join(docsPath, 'SPMS_Backups');
+    const defaultBase = path.join(docsPath, 'TallyCat_Backups');
 
     // Ensure paths are independent and not empty strings
     if (!db.data.settings.main_backup_path || db.data.settings.main_backup_path.trim() === '') {

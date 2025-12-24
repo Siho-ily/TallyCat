@@ -1,8 +1,8 @@
 {
   "private": true,
-  "name": "spms",
-  "productName": "SPMS",
-  "description": "Sales and Purchase Management System (SPMS)",
+  "name": "tallycat",
+  "productName": "TallyCat",
+  "description": "TallyCat",
   "version": "1.0.0",
   "author": "Siho-ily <dolphin@kakao.com>",
   "main": "app/background.js",
