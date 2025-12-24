@@ -7,10 +7,13 @@ import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { Record, Category } from '../../types';
 import Card from '../ui/Card';
 
+import { getMonthWeekRange, moveMonthWeek } from '../../lib/dateUtils';
+
 interface CostAnalysisProps {
   records: Record[];
   categories: Category[];
-  targetMonth: DateTime;
+  targetDate: DateTime;
+  period: 'week' | 'month';
 }
 
 const COST_COLORS = ['#fbbf24', '#f87171']; // Amber for Purchase, Rose for Spending
@@ -25,39 +28,58 @@ interface HierarchicalRow {
   isUnassigned?: boolean;
 }
 
-export default function CostAnalysis({ records, categories, targetMonth }: CostAnalysisProps) {
-  const currentMonthSummary = useMemo(() => {
-    const monthRecords = records.filter(r => {
+export default function CostAnalysis({
+  records,
+  categories,
+  targetDate,
+  period
+}: CostAnalysisProps) {
+  const currentRange = useMemo(() => {
+    if (period === 'month') {
+      return { start: targetDate.startOf('month'), end: targetDate.endOf('month') };
+    }
+    return getMonthWeekRange(targetDate);
+  }, [targetDate, period]);
+
+  const prevRange = useMemo(() => {
+    if (period === 'month') {
+      const prev = targetDate.minus({ months: 1 });
+      return { start: prev.startOf('month'), end: prev.endOf('month') };
+    }
+    return getMonthWeekRange(moveMonthWeek(targetDate, -1));
+  }, [targetDate, period]);
+
+  const currentPeriodSummary = useMemo(() => {
+    const periodRecords = records.filter(r => {
       const d = DateTime.fromFormat(r.date, 'yyyy-MM-dd HH:mm:ss');
-      return d.year === targetMonth.year && d.month === targetMonth.month;
+      return d >= currentRange.start.startOf('day') && d <= currentRange.end.endOf('day');
     });
 
     return {
-      total: monthRecords
+      total: periodRecords
         .filter(r => r.type === 'purchase' || r.type === 'spending')
         .reduce((s, r) => s + r.amount, 0),
-      purchase: monthRecords.filter(r => r.type === 'purchase').reduce((s, r) => s + r.amount, 0),
-      spending: monthRecords.filter(r => r.type === 'spending').reduce((s, r) => s + r.amount, 0),
-      records: monthRecords
+      purchase: periodRecords.filter(r => r.type === 'purchase').reduce((s, r) => s + r.amount, 0),
+      spending: periodRecords.filter(r => r.type === 'spending').reduce((s, r) => s + r.amount, 0),
+      records: periodRecords
     };
-  }, [records, targetMonth]);
+  }, [records, currentRange]);
 
-  const prevMonthSummary = useMemo(() => {
-    const prev = targetMonth.minus({ months: 1 });
-    const monthRecords = records.filter(r => {
+  const prevPeriodSummary = useMemo(() => {
+    const periodRecords = records.filter(r => {
       const d = DateTime.fromFormat(r.date, 'yyyy-MM-dd HH:mm:ss');
-      return d.year === prev.year && d.month === prev.month;
+      return d >= prevRange.start.startOf('day') && d <= prevRange.end.endOf('day');
     });
 
     return {
-      total: monthRecords
+      total: periodRecords
         .filter(r => r.type === 'purchase' || r.type === 'spending')
         .reduce((s, r) => s + r.amount, 0),
-      purchase: monthRecords.filter(r => r.type === 'purchase').reduce((s, r) => s + r.amount, 0),
-      spending: monthRecords.filter(r => r.type === 'spending').reduce((s, r) => s + r.amount, 0),
-      records: monthRecords
+      purchase: periodRecords.filter(r => r.type === 'purchase').reduce((s, r) => s + r.amount, 0),
+      spending: periodRecords.filter(r => r.type === 'spending').reduce((s, r) => s + r.amount, 0),
+      records: periodRecords
     };
-  }, [records, targetMonth]);
+  }, [records, prevRange]);
 
   // Hierarchical Table Data Construction
   const tableData = useMemo(() => {
@@ -66,9 +88,9 @@ export default function CostAnalysis({ records, categories, targetMonth }: CostA
     // 1. Total Row
     rows.push({
       id: 'total',
-      name: '합계',
-      prev: prevMonthSummary.total,
-      current: currentMonthSummary.total,
+      name: `${period === 'week' ? '주간' : '월간'} 합계`,
+      prev: prevPeriodSummary.total,
+      current: currentPeriodSummary.total,
       type: 'total'
     });
 
@@ -76,8 +98,8 @@ export default function CostAnalysis({ records, categories, targetMonth }: CostA
       const typeCategories = categories.filter(c => c.type === type);
       const catIdsInType = new Set(typeCategories.map(c => c.id));
 
-      const currentTypeRecords = currentMonthSummary.records.filter(r => r.type === type);
-      const prevTypeRecords = prevMonthSummary.records.filter(r => r.type === type);
+      const currentTypeRecords = currentPeriodSummary.records.filter(r => r.type === type);
+      const prevTypeRecords = prevPeriodSummary.records.filter(r => r.type === type);
 
       const groupCurrent = currentTypeRecords.reduce((s, r) => s + r.amount, 0);
       const groupPrev = prevTypeRecords.reduce((s, r) => s + r.amount, 0);
@@ -140,69 +162,79 @@ export default function CostAnalysis({ records, categories, targetMonth }: CostA
     buildGroupRows('spending', '지출');
 
     return rows;
-  }, [currentMonthSummary, prevMonthSummary, categories]);
+  }, [currentPeriodSummary, prevPeriodSummary, categories, period]);
 
   // Chart Data: Purchase vs Spending
   const costPieData = useMemo(
     () =>
       [
-        { name: '매입', value: currentMonthSummary.purchase },
-        { name: '지출', value: currentMonthSummary.spending }
+        { name: '매입', value: currentPeriodSummary.purchase },
+        { name: '지출', value: currentPeriodSummary.spending }
       ].filter(d => d.value > 0),
-    [currentMonthSummary]
+    [currentPeriodSummary]
   );
 
   return (
     <div className="space-y-8">
       {/* Top Chart */}
-      <Card title="비용 비중 분석 (매입 vs 지출)" icon={null}>
-        <div className="h-[350px] w-full max-w-2xl mx-auto">
+      <Card title={`${period === 'week' ? '주간' : '월간'} 비용 비중 분석`} icon={null}>
+        <div className="h-[350px] w-full max-w-2xl mx-auto relative">
           {costPieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={costPieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={120}
-                  paddingAngle={8}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(1)}%)`}>
-                  {costPieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COST_COLORS[index % COST_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number) => `${value.toLocaleString()}원`}
-                  contentStyle={{
-                    borderRadius: '16px',
-                    border: 'none',
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.1)'
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={costPieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={80}
+                    outerRadius={130}
+                    paddingAngle={8}
+                    dataKey="value">
+                    {costPieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COST_COLORS[index % COST_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number) => `${value.toLocaleString()}원`}
+                    contentStyle={{
+                      borderRadius: '16px',
+                      border: 'none',
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              {/* Center Labels */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none translate-y-[-10px]">
+                <span className="text-[10px] font-black text-gray-400 tracking-widest uppercase">
+                  총비용
+                </span>
+                <span className="text-2xl font-black text-rose-500">
+                  {currentPeriodSummary.total.toLocaleString()}
+                </span>
+              </div>
+            </>
           ) : (
             <div className="h-full flex items-center justify-center text-gray-400 text-sm italic font-bold">
-              이번 달 등록된 비용 내역이 없습니다.
+              {period === 'week' ? '이번 주' : '이번 달'} 등록된 비용 내역이 없습니다.
             </div>
           )}
         </div>
       </Card>
 
       {/* Detail Table */}
-      <Card title="비용 리포트 상세" icon={null}>
+      <Card title={`${period === 'week' ? '주간' : '월간'} 비용 리포트 상세`} icon={null}>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-t-2 border-b border-slate-200 dark:border-slate-800 text-[11px] font-black uppercase text-slate-500 tracking-widest bg-slate-50/30 dark:bg-slate-900/30">
                 <th className="px-6 py-4 min-w-[150px]">구분</th>
-                <th className="px-6 py-4 text-right">전월비용</th>
+                <th className="px-6 py-4 text-right">이전{period === 'week' ? '주' : '월'}비용</th>
                 <th className="px-6 py-4 text-right bg-slate-100/50 dark:bg-slate-800/50">
-                  당월비용
+                  현재{period === 'week' ? '주' : '월'}비용
                 </th>
-                <th className="px-6 py-4 text-right">전월대비증감(%)</th>
+                <th className="px-6 py-4 text-right">이전대비증감(%)</th>
                 <th className="px-6 py-4 text-right w-[150px]">비중(%)</th>
               </tr>
             </thead>
@@ -217,14 +249,14 @@ export default function CostAnalysis({ records, categories, targetMonth }: CostA
                   share = 100;
                 } else if (row.type === 'group') {
                   share =
-                    currentMonthSummary.total === 0
+                    currentPeriodSummary.total === 0
                       ? 0
-                      : (row.current / currentMonthSummary.total) * 100;
+                      : (row.current / currentPeriodSummary.total) * 100;
                 } else if (row.type === 'item') {
                   const parentTotal =
                     row.costType === 'purchase'
-                      ? currentMonthSummary.purchase
-                      : currentMonthSummary.spending;
+                      ? currentPeriodSummary.purchase
+                      : currentPeriodSummary.spending;
                   share = parentTotal === 0 ? 0 : (row.current / parentTotal) * 100;
                 }
 

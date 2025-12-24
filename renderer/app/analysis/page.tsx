@@ -14,14 +14,46 @@ import { Button } from '../../components/ui/InputControls';
 import { useData } from '../../context/DataContext';
 import RevenueAnalysis from '../../components/analysis/RevenueAnalysis';
 import CostAnalysis from '../../components/analysis/CostAnalysis';
+import ProfitAnalysis from '../../components/analysis/ProfitAnalysis';
+
+import { getMonthWeekRange, moveMonthWeek } from '../../lib/dateUtils';
 
 export default function AnalysisPage() {
   const { records, categories, loading } = useData();
-  const [currentMonth, setCurrentMonth] = useState(DateTime.now().startOf('month'));
-  const [mode, setMode] = useState<'revenue' | 'cost'>('revenue');
+  const [targetDate, setTargetDate] = useState(DateTime.now());
+  const [period, setPeriod] = useState<'week' | 'month'>('month');
+  const [mode, setMode] = useState<'summary' | 'revenue' | 'cost'>('summary');
 
-  const handlePrevMonth = () => setCurrentMonth(currentMonth.minus({ months: 1 }));
-  const handleNextMonth = () => setCurrentMonth(currentMonth.plus({ months: 1 }));
+  const handlePrev = () => {
+    if (period === 'week') {
+      setTargetDate(moveMonthWeek(targetDate, -1));
+    } else {
+      setTargetDate(targetDate.minus({ months: 1 }).startOf('month'));
+    }
+  };
+
+  const handleNext = () => {
+    if (period === 'week') {
+      setTargetDate(moveMonthWeek(targetDate, 1));
+    } else {
+      setTargetDate(targetDate.plus({ months: 1 }).startOf('month'));
+    }
+  };
+
+  const getTargetLabel = () => {
+    if (period === 'month') return targetDate.toFormat('yyyy년 MM월');
+
+    const { start, end } = getMonthWeekRange(targetDate);
+    const firstDayOfMonth = targetDate.startOf('month');
+    const firstSatDate = 1 + ((6 - firstDayOfMonth.weekday + 7) % 7);
+    let weekNum = 1;
+    if (targetDate.day > firstSatDate) {
+      weekNum = 1 + Math.ceil((targetDate.day - firstSatDate) / 7);
+    }
+    return `${start.toFormat('MM.dd')} ~ ${end.toFormat('MM.dd')} (${targetDate.toFormat(
+      'MM'
+    )}월 ${weekNum}주)`;
+  };
 
   if (loading) {
     return (
@@ -37,31 +69,66 @@ export default function AnalysisPage() {
         title="통계 분석"
         description="매장의 흐름을 데이터로 분석하고 전략을 세우세요."
         actions={
-          <div className="flex items-center gap-3 bg-white dark:bg-gray-950 p-1 rounded-2xl border border-gray-200 dark:border-gray-800">
-            <Button variant="ghost" size="sm" onClick={handlePrevMonth} className="!p-2">
-              <ChevronLeft size={16} />
-            </Button>
-            <div className="px-3 flex items-center gap-2">
-              <Calendar size={14} className="text-blue-500" />
-              <span className="text-sm font-black text-gray-900 dark:text-white">
-                {currentMonth.toFormat('yyyy년 MM월')}
-              </span>
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4">
+            {/* Period Switcher */}
+            <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
+              <button
+                onClick={() => setPeriod('week')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${
+                  period === 'week'
+                    ? 'bg-white dark:bg-gray-800 text-blue-500 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}>
+                주간
+              </button>
+              <button
+                onClick={() => setPeriod('month')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${
+                  period === 'month'
+                    ? 'bg-white dark:bg-gray-800 text-blue-500 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}>
+                월간
+              </button>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleNextMonth} className="!p-2">
-              <ChevronRight size={16} />
-            </Button>
+
+            {/* Date Navigation */}
+            <div className="flex items-center gap-3 bg-white dark:bg-gray-950 p-1 rounded-2xl border border-gray-200 dark:border-gray-800">
+              <Button variant="ghost" size="sm" onClick={handlePrev} className="!p-2">
+                <ChevronLeft size={16} />
+              </Button>
+              <div className="px-3 flex items-center gap-2 min-w-[140px] justify-center">
+                <Calendar size={14} className="text-blue-500" />
+                <span className="text-sm font-black text-gray-900 dark:text-white whitespace-nowrap">
+                  {getTargetLabel()}
+                </span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleNext} className="!p-2">
+                <ChevronRight size={16} />
+              </Button>
+            </div>
           </div>
         }
       />
 
       {/* Mode Switcher */}
       <div className="flex justify-center">
-        <div className="flex p-1.5 bg-gray-100 dark:bg-gray-900 rounded-[20px] border border-gray-200 dark:border-gray-800 w-full max-w-md">
+        <div className="flex p-1.5 bg-gray-100 dark:bg-gray-900 rounded-[24px] border border-gray-200 dark:border-gray-800 w-full max-w-xl shadow-inner">
+          <button
+            onClick={() => setMode('summary')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all ${
+              mode === 'summary'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}>
+            <PieChartIcon size={16} />
+            종합 통계
+          </button>
           <button
             onClick={() => setMode('revenue')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all ${
               mode === 'revenue'
-                ? 'bg-white dark:bg-gray-800 text-blue-500 shadow-sm border border-gray-200 dark:border-gray-700'
+                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
                 : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
             }`}>
             <BarChart3 size={16} />
@@ -69,9 +136,9 @@ export default function AnalysisPage() {
           </button>
           <button
             onClick={() => setMode('cost')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all ${
               mode === 'cost'
-                ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20'
+                ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30'
                 : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
             }`}>
             <PieChartIcon size={16} />
@@ -80,10 +147,29 @@ export default function AnalysisPage() {
         </div>
       </div>
 
-      {mode === 'revenue' ? (
-        <RevenueAnalysis records={records} categories={categories} targetMonth={currentMonth} />
-      ) : (
-        <CostAnalysis records={records} categories={categories} targetMonth={currentMonth} />
+      {mode === 'summary' && (
+        <ProfitAnalysis
+          records={records}
+          categories={categories}
+          targetDate={targetDate}
+          period={period}
+        />
+      )}
+      {mode === 'revenue' && (
+        <RevenueAnalysis
+          records={records}
+          categories={categories}
+          targetDate={targetDate}
+          period={period}
+        />
+      )}
+      {mode === 'cost' && (
+        <CostAnalysis
+          records={records}
+          categories={categories}
+          targetDate={targetDate}
+          period={period}
+        />
       )}
     </div>
   );

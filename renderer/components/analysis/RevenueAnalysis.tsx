@@ -20,10 +20,13 @@ import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { Record, Category } from '../../types';
 import Card from '../ui/Card';
 
+import { getMonthWeekRange, moveMonthWeek } from '../../lib/dateUtils';
+
 interface RevenueAnalysisProps {
   records: Record[];
   categories: Category[];
-  targetMonth: DateTime;
+  targetDate: DateTime;
+  period: 'week' | 'month';
 }
 
 const COLORS = [
@@ -40,31 +43,57 @@ const COLORS = [
 export default function RevenueAnalysis({
   records,
   categories,
-  targetMonth
+  targetDate,
+  period
 }: RevenueAnalysisProps) {
-  const currentMonthRecords = useMemo(
+  const currentRange = useMemo(() => {
+    if (period === 'month') {
+      return { start: targetDate.startOf('month'), end: targetDate.endOf('month') };
+    }
+    return getMonthWeekRange(targetDate);
+  }, [targetDate, period]);
+
+  const prevRange = useMemo(() => {
+    if (period === 'month') {
+      const prev = targetDate.minus({ months: 1 });
+      return { start: prev.startOf('month'), end: prev.endOf('month') };
+    }
+    // Previous week
+    return getMonthWeekRange(moveMonthWeek(targetDate, -1));
+  }, [targetDate, period]);
+
+  const currentRecords = useMemo(
     () =>
       records.filter(r => {
         const d = DateTime.fromFormat(r.date, 'yyyy-MM-dd HH:mm:ss');
-        return d.year === targetMonth.year && d.month === targetMonth.month && r.type === 'income';
+        return (
+          d >= currentRange.start.startOf('day') &&
+          d <= currentRange.end.endOf('day') &&
+          r.type === 'income'
+        );
       }),
-    [records, targetMonth]
+    [records, currentRange]
   );
 
-  const prevMonthRecords = useMemo(() => {
-    const prev = targetMonth.minus({ months: 1 });
-    return records.filter(r => {
-      const d = DateTime.fromFormat(r.date, 'yyyy-MM-dd HH:mm:ss');
-      return d.year === prev.year && d.month === prev.month && r.type === 'income';
-    });
-  }, [records, targetMonth]);
+  const prevRecords = useMemo(
+    () =>
+      records.filter(r => {
+        const d = DateTime.fromFormat(r.date, 'yyyy-MM-dd HH:mm:ss');
+        return (
+          d >= prevRange.start.startOf('day') &&
+          d <= prevRange.end.endOf('day') &&
+          r.type === 'income'
+        );
+      }),
+    [records, prevRange]
+  );
 
   // 1. Chart Data: Categories
   const categoryChartData = useMemo(() => {
     const data: { name: string; value: number }[] = [];
     const catMap = new Map<string, number>();
 
-    currentMonthRecords.forEach(r => {
+    currentRecords.forEach(r => {
       const cat = categories.find(c => c.id === r.category_id);
       const name = cat ? cat.name : '미지정';
       catMap.set(name, (catMap.get(name) || 0) + r.amount);
@@ -72,7 +101,7 @@ export default function RevenueAnalysis({
 
     catMap.forEach((value, name) => data.push({ name, value }));
     return data.sort((a, b) => b.value - a.value);
-  }, [currentMonthRecords, categories]);
+  }, [currentRecords, categories]);
 
   // 2. Chart Data: Hourly
   const hourlyChartData = useMemo(() => {
@@ -81,25 +110,25 @@ export default function RevenueAnalysis({
       amount: 0
     }));
 
-    currentMonthRecords.forEach(r => {
+    currentRecords.forEach(r => {
       const d = DateTime.fromFormat(r.date, 'yyyy-MM-dd HH:mm:ss');
       data[d.hour].amount += r.amount;
     });
 
     return data;
-  }, [currentMonthRecords]);
+  }, [currentRecords]);
 
   // 3. Table Data
   const tableData = useMemo(() => {
-    const currentTotal = currentMonthRecords.reduce((s, r) => s + r.amount, 0);
-    const prevTotal = prevMonthRecords.reduce((s, r) => s + r.amount, 0);
+    const currentTotal = currentRecords.reduce((s, r) => s + r.amount, 0);
+    const prevTotal = prevRecords.reduce((s, r) => s + r.amount, 0);
     const incomeCategories = categories.filter(c => c.type === 'income');
     const incomeCatIds = new Set(incomeCategories.map(c => c.id));
 
     const mappedData = incomeCategories
       .map(cat => {
-        const catRecords = currentMonthRecords.filter(r => r.category_id === cat.id);
-        const prevCatRecords = prevMonthRecords.filter(r => r.category_id === cat.id);
+        const catRecords = currentRecords.filter(r => r.category_id === cat.id);
+        const prevCatRecords = prevRecords.filter(r => r.category_id === cat.id);
 
         const count = catRecords.length;
         const amount = catRecords.reduce((s, r) => s + r.amount, 0);
@@ -123,8 +152,8 @@ export default function RevenueAnalysis({
       .filter(d => d.count > 0 || d.amount > 0);
 
     // Unassigned records
-    const unassignedRecords = currentMonthRecords.filter(r => !incomeCatIds.has(r.category_id));
-    const prevUnassignedRecords = prevMonthRecords.filter(r => !incomeCatIds.has(r.category_id));
+    const unassignedRecords = currentRecords.filter(r => !incomeCatIds.has(r.category_id));
+    const prevUnassignedRecords = prevRecords.filter(r => !incomeCatIds.has(r.category_id));
 
     if (unassignedRecords.length > 0) {
       const count = unassignedRecords.length;
@@ -155,8 +184,8 @@ export default function RevenueAnalysis({
     return [
       {
         id: 'total',
-        name: '총 매출 합계',
-        count: currentMonthRecords.length,
+        name: `${period === 'week' ? '주간' : '월간'} 매출 합계`,
+        count: currentRecords.length,
         amount: currentTotal,
         diff: totalDiff,
         diffPercent: totalDiffPercent,
@@ -165,41 +194,52 @@ export default function RevenueAnalysis({
       },
       ...mappedData
     ];
-  }, [currentMonthRecords, prevMonthRecords, categories]);
+  }, [currentRecords, prevRecords, categories, period]);
 
-  const totalRevenue = currentMonthRecords.reduce((s, r) => s + r.amount, 0);
+  const totalRevenue = currentRecords.reduce((s, r) => s + r.amount, 0);
 
   return (
     <div className="space-y-8">
       {/* Top Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="카테고리별 매출 비중" icon={null}>
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full relative">
             {categoryChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value">
-                    {categoryChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number) => `${value.toLocaleString()}원`}
-                    contentStyle={{
-                      borderRadius: '12px',
-                      border: 'none',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={65}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value">
+                      {categoryChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => `${value.toLocaleString()}원`}
+                      contentStyle={{
+                        borderRadius: '12px',
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Center Labels */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none translate-y-[-10px]">
+                  <span className="text-[10px] font-black text-gray-400 tracking-widest uppercase">
+                    총매출
+                  </span>
+                  <span className="text-xl font-black text-blue-600 dark:text-blue-400">
+                    {totalRevenue.toLocaleString()}
+                  </span>
+                </div>
+              </>
             ) : (
               <div className="h-full flex items-center justify-center text-gray-400 text-sm italic font-bold">
                 데이터가 없습니다.
