@@ -8,8 +8,6 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -39,6 +37,40 @@ const COLORS = [
   '#2dd4bf',
   '#fb923c'
 ];
+
+// Custom Tooltip for Premium Look and High Visibility
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-2xl animate-in fade-in zoom-in duration-200">
+        {label && (
+          <p className="text-[10px] font-black text-blue-500 dark:text-blue-400 uppercase tracking-widest mb-2 pb-1 border-b border-gray-100 dark:border-gray-800">
+            {label}
+          </p>
+        )}
+        <div className="space-y-2">
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center justify-between gap-6">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-2.5 h-2.5 rounded-full shadow-sm"
+                  style={{ backgroundColor: entry.color || entry.fill || entry.payload?.fill }}
+                />
+                <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                  {entry.name}
+                </span>
+              </div>
+              <span className="text-[12px] font-black text-gray-900 dark:text-white">
+                {entry.value.toLocaleString()}원
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function RevenueAnalysis({
   records,
@@ -220,14 +252,7 @@ export default function RevenueAnalysis({
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      formatter={(value: number) => `${value.toLocaleString()}원`}
-                      contentStyle={{
-                        borderRadius: '12px',
-                        border: 'none',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                      }}
-                    />
+                    <Tooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
                 {/* Center Labels */}
@@ -281,17 +306,11 @@ export default function RevenueAnalysis({
                   axisLine={false}
                   tickFormatter={v => `${(v / 10000).toLocaleString()}만`}
                 />
-                <Tooltip
-                  formatter={(value: number) => `${value.toLocaleString()}원`}
-                  contentStyle={{
-                    borderRadius: '12px',
-                    border: 'none',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                  }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Area
                   type="monotone"
                   dataKey="amount"
+                  name="매출액"
                   stroke="#3b82f6"
                   strokeWidth={3}
                   fillOpacity={1}
