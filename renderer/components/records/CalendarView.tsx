@@ -64,21 +64,23 @@ export default function CalendarView({ calendarDays, onDayClick }: CalendarViewP
                 )}
               </div>
 
-              <div className="space-y-1.5 backdrop-blur-sm">
+              <div className="space-y-1 mt-auto pt-2">
                 {day.income > 0 && (
-                  <div className="text-[10px] font-black text-emerald-500 truncate bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">
-                    {day.income.toLocaleString()}
+                  <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 truncate bg-emerald-500/10 dark:bg-emerald-500/5 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    +{day.income.toLocaleString()}
                   </div>
                 )}
                 {day.expense > 0 && (
-                  <div className="text-[10px] font-black text-rose-500 truncate bg-rose-500/5 px-2 py-1 rounded-lg border border-rose-500/10">
-                    {day.expense.toLocaleString()}
+                  <div className="text-[10px] font-black text-rose-600 dark:text-rose-400 truncate bg-rose-500/10 dark:bg-rose-500/5 px-2 py-0.5 rounded-md border border-rose-500/20">
+                    -{day.expense.toLocaleString()}
                   </div>
                 )}
                 {hasData && (
                   <div
-                    className={`text-[9px] font-bold text-center mt-1 border-t border-gray-800/50 pt-1 ${
-                      day.profit >= 0 ? 'text-blue-400/50' : 'text-rose-400/50'
+                    className={`text-[10px] font-black text-center mt-1 pt-1 border-t border-gray-100 dark:border-gray-800 ${
+                      day.profit >= 0
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-rose-600 dark:text-rose-400'
                     }`}>
                     {day.profit >= 0 ? '+' : ''}
                     {day.profit.toLocaleString()}

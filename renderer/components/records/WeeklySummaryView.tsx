@@ -18,28 +18,32 @@ export default function WeeklySummaryView({
 }: WeeklySummaryViewProps) {
   const { start, end } = getMonthWeekRange(currentDate);
 
-  // Generate days in the range
-  const days = React.useMemo(() => {
-    const list = [];
+  // Create a fixed 7-day grid based on Sunday-Saturday
+  const grid = React.useMemo(() => {
+    // 0: Sun, 1: Mon, ..., 6: Sat
+    const slots = Array(7).fill(null);
+
     let curr = start;
     while (curr <= end) {
+      const idx = curr.weekday % 7; // Sunday is 7, 7%7 = 0. Mon is 1, 1%7=1...
+
       const dayStr = curr.toFormat('yyyy-MM-dd');
       const dayRecords = records.filter(r => r.date.startsWith(dayStr));
-
       const income = dayRecords.filter(r => r.type === 'income').reduce((s, r) => s + r.amount, 0);
       const expense = dayRecords
         .filter(r => r.type === 'purchase' || r.type === 'spending')
         .reduce((s, r) => s + r.amount, 0);
 
-      list.push({
+      slots[idx] = {
         date: curr,
         income,
         expense,
         profit: income - expense
-      });
+      };
+
       curr = curr.plus({ days: 1 });
     }
-    return list;
+    return slots;
   }, [start, end, records]);
 
   return (
@@ -59,14 +63,23 @@ export default function WeeklySummaryView({
           </div>
         ))}
 
-        {days.map((day, idx) => {
+        {grid.map((day, idx) => {
+          if (!day) {
+            return (
+              <div
+                key={`empty-${idx}`}
+                className="min-h-[140px] p-4 rounded-[28px] bg-transparent border border-dashed border-gray-200 dark:border-gray-800/30 opacity-30"
+              />
+            );
+          }
+
           const isToday = day.date.hasSame(DateTime.now(), 'day');
           const isTarget = day.date.hasSame(currentDate, 'day');
           const hasData = day.income > 0 || day.expense > 0;
 
           return (
             <div
-              key={idx}
+              key={day.date.toISODate()}
               onClick={() => onDayClick(day.date)}
               className={`min-h-[140px] p-4 rounded-[28px] border transition-all cursor-pointer group relative flex flex-col justify-between ${
                 isTarget

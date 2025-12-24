@@ -13,7 +13,9 @@ interface UseRecordFiltersProps {
   filterPaymentMethod: string;
   searchTerm: string;
   currentDate: DateTime;
-  period: 'day' | 'week' | 'month' | 'year';
+  period: 'day' | 'week' | 'month' | 'year' | 'all';
+  customStart?: DateTime | null;
+  customEnd?: DateTime | null;
 }
 
 export function useRecordFilters({
@@ -24,7 +26,9 @@ export function useRecordFilters({
   filterPaymentMethod,
   searchTerm,
   currentDate,
-  period
+  period,
+  customStart,
+  customEnd
 }: UseRecordFiltersProps): Record[] {
   return React.useMemo(() => {
     let result = [...records];
@@ -53,7 +57,10 @@ export function useRecordFilters({
     let start: DateTime;
     let end: DateTime;
 
-    if (period === 'week') {
+    if (period === 'all') {
+      start = customStart || DateTime.fromMillis(0);
+      end = (customEnd || DateTime.now()).endOf('day');
+    } else if (period === 'week') {
       const range = getMonthWeekRange(currentDate);
       start = range.start;
       end = range.end.endOf('day'); // Ensure we cover the full last day
@@ -80,6 +87,8 @@ export function useRecordFilters({
     searchTerm,
     currentDate,
     period,
-    categories
+    categories,
+    customStart,
+    customEnd
   ]);
 }

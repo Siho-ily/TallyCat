@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { PlusCircle, List, Calendar as CalendarIcon } from 'lucide-react';
+import {
+  PlusCircle,
+  List,
+  Calendar as CalendarIcon,
+  ChevronsLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsRight,
+  ArrowUp
+} from 'lucide-react';
 import { DateTime } from 'luxon';
 
 import { useData } from '../../context/DataContext';
@@ -21,19 +30,24 @@ export default function RecordsPage() {
   const { records, categories, paymentMethods, loading, refreshData } = useData();
 
   // Filtering states
-  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year' | 'all'>('month');
   const [currentDate, setCurrentDate] = useState(DateTime.now());
+  const [startDate, setStartDate] = useState(DateTime.now().startOf('month'));
+  const [endDate, setEndDate] = useState(DateTime.now().endOf('month'));
+
   const [filterType, setFilterType] = useState<'all' | 'income' | 'purchase' | 'spending'>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [editingRecord, setEditingRecord] = useState<any>(null);
   const [initialData, setInitialData] = useState<any>(null);
-  const [showDetail, setShowDetail] = useState(false);
 
   const handleOpenAddModal = (date?: DateTime) => {
     setEditingRecord(null);
@@ -53,12 +67,33 @@ export default function RecordsPage() {
     filterPaymentMethod,
     searchTerm,
     currentDate,
-    period
+    period,
+    customStart: period === 'all' ? startDate : null,
+    customEnd: period === 'all' ? endDate : null
   });
 
   useEffect(() => {
-    // Reset any view state if needed
-  }, [filterType, filterCategory, filterPaymentMethod, searchTerm, currentDate, period]);
+    setCurrentPage(1);
+  }, [
+    filterType,
+    filterCategory,
+    filterPaymentMethod,
+    searchTerm,
+    currentDate,
+    period,
+    startDate,
+    endDate
+  ]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
+  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+  const paginatedRecords = filteredRecords.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const totals = React.useMemo(() => {
     return filteredRecords.reduce(
@@ -122,7 +157,11 @@ export default function RecordsPage() {
       <PageHeader
         title="매출/비용 내역"
         description={
-          period === 'month'
+          period === 'all'
+            ? `${startDate.toFormat('yyyy.MM.dd')} ~ ${endDate.toFormat(
+                'yyyy.MM.dd'
+              )} 기간의 검색 결과입니다.`
+            : period === 'month'
             ? `${currentDate.toFormat('yyyy년 MM월')} 매장 거래 내역입니다.`
             : period === 'week'
             ? `${getMonthWeekRange(currentDate).start.toFormat('MM월 dd일')} ~ ${getMonthWeekRange(
@@ -142,6 +181,10 @@ export default function RecordsPage() {
         setPeriod={setPeriod}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         filterType={filterType}
@@ -154,45 +197,124 @@ export default function RecordsPage() {
         paymentMethods={paymentMethods}
         globalIncome={globalTotals.income}
         globalExpense={globalTotals.expense}
-        showDetail={showDetail}
-        setShowDetail={setShowDetail}
       />
 
-      {period === 'day' && (
-        <RecordTable
-          records={filteredRecords}
-          categories={categories}
-          paymentMethods={paymentMethods}
-          period={period}
-          showDetail={true}
-          onRecordClick={record => {
-            setSelectedRecord(record);
-            setIsDetailModalOpen(true);
-          }}
-          totalIncome={totals.income}
-          totalExpense={totals.expense}
-        />
+      {/* Pagination Controls (Top) */}
+      {totalPages > 1 && (period === 'all' || period === 'day') && (
+        <div className="flex items-center justify-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="!px-2 !rounded-lg"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(1)}>
+            <ChevronsLeft size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="!px-2 !rounded-lg"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
+            <ChevronLeft size={16} />
+          </Button>
+
+          <div className="flex items-center gap-1 mx-2">
+            {(() => {
+              const pages = [];
+              let startPage = Math.max(1, currentPage - 2);
+              let endPage = Math.min(totalPages, startPage + 4);
+              if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+              }
+
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i)}
+                    className={`w-8 h-8 rounded-lg text-xs font-black ${
+                      currentPage === i
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                        : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}>
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="!px-2 !rounded-lg"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
+            <ChevronRight size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="!px-2 !rounded-lg"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(totalPages)}>
+            <ChevronsRight size={16} />
+          </Button>
+        </div>
       )}
 
-      {period === 'week' && (
-        <WeeklySummaryView
-          currentDate={currentDate}
-          records={records}
-          onDayClick={date => {
-            setCurrentDate(date);
-            setPeriod('day');
-          }}
-        />
-      )}
+      <div key={`page-${currentPage}`} className="min-h-[400px] animate-in fade-in duration-300">
+        {(period === 'day' || period === 'all') && (
+          <RecordTable
+            records={paginatedRecords}
+            categories={categories}
+            paymentMethods={paymentMethods}
+            period={period}
+            showDetail={true}
+            onRecordClick={record => {
+              setSelectedRecord(record);
+              setIsDetailModalOpen(true);
+            }}
+            totalIncome={totals.income}
+            totalExpense={totals.expense}
+          />
+        )}
 
-      {(period === 'month' || period === 'year') && (
-        <CalendarView
-          calendarDays={calendarDays}
-          onDayClick={date => {
-            setCurrentDate(date);
-            setPeriod('day');
-          }}
-        />
+        {period === 'week' && (
+          <WeeklySummaryView
+            currentDate={currentDate}
+            records={records}
+            onDayClick={date => {
+              setCurrentDate(date);
+              setPeriod('day');
+            }}
+          />
+        )}
+
+        {(period === 'month' || period === 'year') && (
+          <CalendarView
+            calendarDays={calendarDays}
+            onDayClick={date => {
+              setCurrentDate(date);
+              setPeriod('day');
+            }}
+          />
+        )}
+      </div>
+
+      {/* Back to Top Button */}
+      {(period === 'all' || period === 'day') && filteredRecords.length > 10 && (
+        <div className="flex justify-center pt-8 pb-12">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            icon={<ArrowUp size={16} />}>
+            맨 위로 이동
+          </Button>
+        </div>
       )}
 
       {/* Modals */}

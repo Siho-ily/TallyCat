@@ -15,10 +15,14 @@ import { Button, Input, Toggle } from '../ui/InputControls';
 import { getMonthWeekRange, moveMonthWeek } from '../../lib/dateUtils';
 
 interface RecordFilterBarProps {
-  period: 'day' | 'week' | 'month' | 'year';
-  setPeriod: (period: 'day' | 'week' | 'month' | 'year') => void;
+  period: 'day' | 'week' | 'month' | 'year' | 'all';
+  setPeriod: (period: 'day' | 'week' | 'month' | 'year' | 'all') => void;
   currentDate: DateTime;
   setCurrentDate: (date: DateTime) => void;
+  startDate: DateTime;
+  setStartDate: (date: DateTime) => void;
+  endDate: DateTime;
+  setEndDate: (date: DateTime) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   filterType: 'all' | 'income' | 'purchase' | 'spending';
@@ -31,8 +35,6 @@ interface RecordFilterBarProps {
   paymentMethods: PaymentMethod[];
   globalIncome: number;
   globalExpense: number;
-  showDetail: boolean;
-  setShowDetail: (show: boolean) => void;
 }
 
 export default function RecordFilterBar({
@@ -40,6 +42,10 @@ export default function RecordFilterBar({
   setPeriod,
   currentDate,
   setCurrentDate,
+  startDate,
+  setStartDate,
+  endDate,
+  setEndDate,
   searchTerm,
   setSearchTerm,
   filterType,
@@ -51,9 +57,7 @@ export default function RecordFilterBar({
   categories,
   paymentMethods,
   globalIncome,
-  globalExpense,
-  showDetail,
-  setShowDetail
+  globalExpense
 }: RecordFilterBarProps) {
   const dateInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -107,6 +111,9 @@ export default function RecordFilterBar({
     return Array.from({ length: 21 }, (_, i) => currentYear - 10 + i);
   }, []);
 
+  const startDateRef = React.useRef<HTMLInputElement>(null);
+  const endDateRef = React.useRef<HTMLInputElement>(null);
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 p-6 rounded-[32px] shadow-xl space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
       {/* 1st Row: Global Statistics (Total Cumulative) */}
@@ -135,108 +142,167 @@ export default function RecordFilterBar({
         {/* 2nd Row: Period Controls (Horizontal) */}
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
           <div className="flex p-1 bg-white dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-800 shrink-0">
-            {(['day', 'week', 'month'] as const).map(p => (
+            {(['day', 'week', 'month', 'all'] as const).map(p => (
               <Button
                 key={p}
                 variant={period === p ? 'primary' : 'ghost'}
                 size="sm"
                 className="!text-[10px] !px-4 !rounded-xl"
                 onClick={() => setPeriod(p)}>
-                {p === 'day' ? '일일' : p === 'week' ? '주간' : '월간'}
+                {p === 'day' ? '일일' : p === 'week' ? '주간' : p === 'month' ? '월간' : '전체'}
               </Button>
             ))}
           </div>
 
-          <div className="flex items-center gap-2 bg-white dark:bg-gray-950 p-1.5 rounded-2xl border border-gray-200 dark:border-gray-800 h-[42px] flex-1 md:flex-none md:min-w-[240px] justify-between relative group">
-            <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveDate(-1)}>
-              <ChevronLeft size={16} />
-            </Button>
-
-            <div className="flex-1 px-2 relative group/inner h-full flex items-center justify-center">
+          {period === 'all' ? (
+            <div className="flex items-center bg-white dark:bg-gray-950 p-1 rounded-2xl border border-gray-200 dark:border-gray-800 h-[42px] flex-1 md:flex-none">
               <div
                 onClick={() => {
-                  if (period === 'year') return;
-                  if (dateInputRef.current) {
-                    if (typeof (dateInputRef.current as any).showPicker === 'function') {
-                      (dateInputRef.current as any).showPicker();
+                  if (startDateRef.current) {
+                    if (typeof (startDateRef.current as any).showPicker === 'function') {
+                      (startDateRef.current as any).showPicker();
                     } else {
-                      dateInputRef.current.click();
+                      startDateRef.current.click();
                     }
                   }
                 }}
-                className={`flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl px-4 py-1.5 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-700 ${
-                  period === 'year' ? 'active:scale-95' : ''
-                }`}>
-                <CalendarIcon
-                  size={14}
-                  className="text-blue-500 opacity-70 group-hover/inner:opacity-100 transition-opacity"
+                className="flex flex-1 items-center h-full px-3 gap-2 hover:bg-gray-50 dark:hover:bg-gray-900 rounded-xl transition-colors relative group/start cursor-pointer">
+                <CalendarIcon size={12} className="text-blue-500 opacity-60" />
+                <input
+                  ref={startDateRef}
+                  type="date"
+                  value={startDate.toISODate() || ''}
+                  onChange={e => {
+                    const dt = DateTime.fromISO(e.target.value);
+                    if (dt.isValid) setStartDate(dt);
+                  }}
+                  className="absolute opacity-0 w-0 h-0 pointer-events-none"
                 />
-                <span className="text-[11px] font-black text-gray-950 dark:text-white whitespace-nowrap">
-                  {getPeriodLabel()}
+                <span className="text-[11px] font-black text-gray-900 dark:text-white">
+                  {startDate.toFormat('yy.MM.dd')}
                 </span>
                 <ChevronDown
-                  size={12}
-                  className="text-blue-500 dark:text-blue-400 group-hover/inner:translate-y-0.5 transition-transform"
+                  size={10}
+                  className="text-gray-300 ml-auto group-hover/start:text-blue-500 transition-colors"
                 />
               </div>
 
-              {period === 'year' ? (
-                <select
-                  value={currentDate.year}
-                  onChange={handleDateChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full [color-scheme:light] dark:[color-scheme:dark]">
-                  {years.map(y => (
-                    <option
-                      key={y}
-                      value={y}
-                      className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-                      {y}년
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  ref={dateInputRef}
-                  type={period === 'month' ? 'month' : 'date'}
-                  className="absolute opacity-0 w-0 h-0 pointer-events-none"
-                  value={
-                    period === 'month'
-                      ? currentDate.toFormat('yyyy-MM')
-                      : currentDate.toISODate() || ''
+              <span className="text-gray-300 dark:text-gray-700 font-bold px-1 select-none">~</span>
+
+              <div
+                onClick={() => {
+                  if (endDateRef.current) {
+                    if (typeof (endDateRef.current as any).showPicker === 'function') {
+                      (endDateRef.current as any).showPicker();
+                    } else {
+                      endDateRef.current.click();
+                    }
                   }
-                  onChange={handleDateChange}
+                }}
+                className="flex flex-1 items-center h-full px-3 gap-2 hover:bg-gray-50 dark:hover:bg-gray-900 rounded-xl transition-colors relative group/end cursor-pointer">
+                <CalendarIcon size={12} className="text-blue-500 opacity-60" />
+                <input
+                  ref={endDateRef}
+                  type="date"
+                  value={endDate.toISODate() || ''}
+                  onChange={e => {
+                    const dt = DateTime.fromISO(e.target.value);
+                    if (dt.isValid) setEndDate(dt);
+                  }}
+                  className="absolute opacity-0 w-0 h-0 pointer-events-none"
                 />
-              )}
+                <span className="text-[11px] font-black text-gray-900 dark:text-white">
+                  {endDate.toFormat('yy.MM.dd')}
+                </span>
+                <ChevronDown
+                  size={10}
+                  className="text-gray-300 ml-auto group-hover/end:text-blue-500 transition-colors"
+                />
+              </div>
             </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-white dark:bg-gray-950 p-1.5 rounded-2xl border border-gray-200 dark:border-gray-800 h-[42px] flex-1 md:flex-none md:min-w-[240px] justify-between relative group">
+              <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveDate(-1)}>
+                <ChevronLeft size={16} />
+              </Button>
 
-            <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveDate(1)}>
-              <ChevronRight size={16} />
-            </Button>
-          </div>
+              <div className="flex-1 px-2 relative group/inner h-full flex items-center justify-center">
+                <div
+                  onClick={() => {
+                    if (period === 'year') return;
+                    if (dateInputRef.current) {
+                      if (typeof (dateInputRef.current as any).showPicker === 'function') {
+                        (dateInputRef.current as any).showPicker();
+                      } else {
+                        dateInputRef.current.click();
+                      }
+                    }
+                  }}
+                  className={`flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl px-4 py-1.5 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-700 ${
+                    period === 'year' ? 'active:scale-95' : ''
+                  }`}>
+                  <CalendarIcon
+                    size={14}
+                    className="text-blue-500 opacity-70 group-hover/inner:opacity-100 transition-opacity"
+                  />
+                  <span className="text-[11px] font-black text-gray-950 dark:text-white whitespace-nowrap">
+                    {getPeriodLabel()}
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className="text-blue-500 dark:text-blue-400 group-hover/inner:translate-y-0.5 transition-transform"
+                  />
+                </div>
 
-          <div className="flex-1 flex justify-end">
-            <div
-              className={`bg-white dark:bg-gray-950 px-4 py-1.5 rounded-2xl border border-gray-200 dark:border-gray-800 flex items-center gap-3 h-[42px] transition-all ${
-                period === 'day' ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''
-              }`}>
-              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest whitespace-nowrap">
-                상세 정보
-              </span>
-              <Toggle
-                checked={period === 'day' ? true : showDetail}
-                onChange={period === 'day' ? () => {} : setShowDetail}
-              />
+                {period === 'year' ? (
+                  <select
+                    value={currentDate.year}
+                    onChange={handleDateChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full [color-scheme:light] dark:[color-scheme:dark]">
+                    {years.map(y => (
+                      <option
+                        key={y}
+                        value={y}
+                        className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                        {y}년
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    ref={dateInputRef}
+                    type={period === 'month' ? 'month' : 'date'}
+                    className="absolute opacity-0 w-0 h-0 pointer-events-none"
+                    value={
+                      period === 'month'
+                        ? currentDate.toFormat('yyyy-MM')
+                        : currentDate.toISODate() || ''
+                    }
+                    onChange={handleDateChange}
+                  />
+                )}
+              </div>
+
+              <Button variant="ghost" size="sm" className="!p-2" onClick={() => moveDate(1)}>
+                <ChevronRight size={16} />
+              </Button>
             </div>
-          </div>
+          )}
+
+          <div className="flex-1" />
         </div>
 
         {/* 3rd Row: Search & Category Filters (Horizontal) */}
-        <div className="flex flex-col md:flex-row gap-3 items-stretch">
+        <div
+          className={`flex flex-col md:flex-row gap-3 items-stretch transition-opacity ${
+            period !== 'day' && period !== 'all' ? 'opacity-50 pointer-events-none' : ''
+          }`}>
           <div className="flex gap-2 shrink-0">
             <select
               value={filterType}
               onChange={e => setFilterType(e.target.value as any)}
-              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer text-gray-900 dark:text-white min-w-[80px] [color-scheme:light] dark:[color-scheme:dark]">
+              disabled={period !== 'day' && period !== 'all'}
+              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer text-gray-900 dark:text-white min-w-[80px] [color-scheme:light] dark:[color-scheme:dark] disabled:cursor-not-allowed">
               <option
                 value="all"
                 className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
@@ -262,7 +328,8 @@ export default function RecordFilterBar({
             <select
               value={filterCategory}
               onChange={e => setFilterCategory(e.target.value)}
-              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[130px] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
+              disabled={period !== 'day' && period !== 'all'}
+              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[130px] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] disabled:cursor-not-allowed">
               <option
                 value="all"
                 className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
@@ -285,7 +352,8 @@ export default function RecordFilterBar({
             <select
               value={filterPaymentMethod}
               onChange={e => setFilterPaymentMethod(e.target.value)}
-              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[110px] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
+              disabled={period !== 'day' && period !== 'all'}
+              className="h-[42px] bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-[11px] font-bold rounded-2xl px-4 outline-none focus:ring-2 focus:ring-blue-500/40 appearance-none cursor-pointer min-w-[110px] text-gray-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark] disabled:cursor-not-allowed">
               <option
                 value="all"
                 className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
@@ -306,11 +374,16 @@ export default function RecordFilterBar({
 
           <div className="flex-1">
             <Input
-              placeholder="메모 또는 금액으로 빠른 검색..."
+              placeholder={
+                period === 'day' || period === 'all'
+                  ? '메모 또는 금액으로 빠른 검색...'
+                  : '상세 검색은 일일/전체 보기에서 가능합니다.'
+              }
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
+              disabled={period !== 'day' && period !== 'all'}
               prefixIcon={<SearchIcon size={16} />}
-              className="!h-[42px] !text-[11px]"
+              className="!h-[42px] !text-[11px] disabled:bg-gray-100 dark:disabled:bg-gray-900 disabled:cursor-not-allowed"
             />
           </div>
         </div>

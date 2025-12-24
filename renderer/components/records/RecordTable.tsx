@@ -8,7 +8,7 @@ interface RecordTableProps {
   categories: Category[];
   paymentMethods: PaymentMethod[];
   onRecordClick: (record: Record) => void;
-  period?: 'day' | 'week' | 'month' | 'year'; // Added period prop
+  period?: 'day' | 'week' | 'month' | 'year' | 'all'; // Added 'all' prop
   showDetail?: boolean;
   netProfit?: number;
   totalIncome?: number;
