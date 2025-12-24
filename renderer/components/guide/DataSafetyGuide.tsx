@@ -42,7 +42,7 @@ export default function DataSafetyGuide() {
         </Card>
 
         <Card
-          title="데이터 초기화 vs 시스템 초기화"
+          title="장부내역 초기화 vs 전체 초기화"
           icon={<AlertTriangle size={20} className="text-rose-500" />}>
           <div className="space-y-3">
             <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -53,12 +53,12 @@ export default function DataSafetyGuide() {
             </p>
             <ul className="text-xs text-gray-500 space-y-1.5 ml-4 list-disc leading-relaxed">
               <li>
-                <strong className="text-amber-500">데이터 초기화</strong>: 모든 내역과 자동화 규칙
-                삭제 (카테고리/설정은 유지)
+                <strong className="text-amber-500">장부내역 초기화</strong>: 모든 거래 내역만 삭제
+                (자동화 규칙, 카테고리, 설정은 유지)
               </li>
               <li>
-                <strong className="text-rose-500">시스템 완전 초기화</strong>: 설정, 카테고리,
-                백업까지 모두 삭제
+                <strong className="text-rose-500">전체 초기화</strong>: 내역, 자동화 규칙, 카테고리,
+                설정, 백업까지 모두 삭제
               </li>
             </ul>
             <p className="text-xs text-rose-600 dark:text-rose-400 leading-relaxed font-bold">
@@ -84,8 +84,7 @@ export default function DataSafetyGuide() {
             <ol className="text-xs text-gray-500 space-y-1.5 ml-4 list-decimal leading-relaxed">
               <li>설정 페이지로 이동</li>
               <li>
-                <strong className="text-blue-500">Main 복구</strong> 또는{' '}
-                <strong className="text-emerald-500">Sub 복구</strong> 선택
+                <strong className="text-emerald-500">백업 데이터 복구 (JSON)</strong> 버튼 클릭
               </li>
               <li>복구할 백업 파일 선택 (날짜 확인)</li>
               <li>프로그램 재시작</li>
@@ -106,13 +105,7 @@ export default function DataSafetyGuide() {
                 <strong>백업 실패</strong>: 백업 경로 접근 권한 확인, 디스크 공간 확보
               </li>
               <li>
-                <strong>데이터 미표시</strong>: 새로고침 버튼 (사이드바 하단) 클릭
-              </li>
-              <li>
-                <strong>느린 성능</strong>: 오래된 백업 수동 삭제, DB 최적화
-              </li>
-              <li>
-                <strong>엑셀 가져오기 오류</strong>: 파일 형식 확인 (XLSX)
+                <strong>엑셀 가져오기 오류</strong>: 파일 형식 확인 (XLSX), 데이터 구조 확인
               </li>
             </ul>
           </div>

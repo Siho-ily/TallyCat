@@ -67,10 +67,10 @@ export default function SettingsBackupGuide() {
 
         <Card title="수동 백업/복구" icon={<Download size={20} className="text-amber-500" />}>
           <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            설정 페이지에서 <strong className="text-blue-500">수동 백업</strong> 버튼을 눌러 즉시
-            백업하거나,
-            <strong className="text-emerald-500">복구</strong> 버튼으로 이전 시점의 데이터를 불러올
-            수 있습니다. 중요한 작업 전에는 수동 백업을 권장합니다!
+            설정 페이지에서 <strong className="text-blue-500">전체 데이터 백업 (JSON)</strong>{' '}
+            버튼을 눌러 즉시 백업하거나,
+            <strong className="text-emerald-500">백업 데이터 복구 (JSON)</strong> 버튼으로 이전
+            시점의 데이터를 불러올 수 있습니다. 중요한 작업 전에는 수동 백업을 권장합니다!
           </p>
         </Card>
 
