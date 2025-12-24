@@ -4,8 +4,8 @@ import Layout from '../components/layout/Layout';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'SPMS - Sales and Purchase Management System',
-  description: 'Offline sales and purchase management system'
+  title: '탤리캣 - 가게 장부 관리 고양이',
+  description: '오프라인 가게 장부 관리 시스템'
 };
 
 import { DataProvider } from '../context/DataContext';

@@ -32,13 +32,13 @@ export default function Sidebar() {
     <nav className="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shadow-xl">
       <div className="p-6">
         <h1 className="flex items-center gap-3 text-2xl font-black">
-          <img src="/images/logo.png" alt="SPMS Logo" className="w-8 h-8 object-contain" />
+          <img src="/images/logo.png" alt="탤리캣 로고" className="w-8 h-8 object-contain" />
           <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-            SPMS
+            탤리캣
           </span>
         </h1>
-        <p className="text-xs text-gray-600 dark:text-gray-500 mt-1 uppercase tracking-widest font-bold">
-          Sales & Purchase Manager
+        <p className="text-[10px] text-gray-600 dark:text-gray-500 mt-1 uppercase tracking-widest font-black">
+          가게 장부 관리 고양이
         </p>
       </div>
 
