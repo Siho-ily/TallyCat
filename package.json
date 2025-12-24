@@ -2,7 +2,7 @@
   "private": true,
   "name": "tallycat",
   "productName": "TallyCat",
-  "description": "TallyCat",
+  "description": "TallyCat - 심플한 가게 매출 관리 도우미",
   "version": "1.0.0",
   "author": "Siho-ily <dolphin@kakao.com>",
   "main": "app/background.js",
