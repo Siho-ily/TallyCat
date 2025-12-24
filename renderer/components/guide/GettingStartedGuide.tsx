@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Moon, Sun, LayoutDashboard } from 'lucide-react';
+import { Sparkles, Moon, Sun, LayoutDashboard, Database, RefreshCw } from 'lucide-react';
 import Card from '../ui/Card';
 
 export default function GettingStartedGuide() {
@@ -67,6 +67,37 @@ export default function GettingStartedGuide() {
             카테고리만 입력하면 바로 기록이 완료됩니다. 간단한 메모를 덧붙이면 나중에 확인하기 더
             편리합니다!
           </p>
+        </Card>
+
+        <Card
+          title="사이드바 하단 모니터링"
+          icon={<Database size={20} className="text-rose-400" />}>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              좌측 사이드바 하단에서 시스템 상태를 실시간으로 확인하세요:
+            </p>
+            <ul className="text-xs text-gray-500 space-y-1.5 ml-4 list-disc leading-relaxed">
+              <li>
+                <strong className="text-blue-500">Source DB (원본)</strong>: 현재 데이터베이스 크기
+                (MB 단위)
+              </li>
+              <li>
+                <strong className="text-gray-500">새로고침 버튼</strong>: 원본 옆 작은 원형 버튼으로
+                데이터 즉시 갱신
+              </li>
+              <li>
+                <strong className="text-blue-500">Main Policy</strong>: 내부 백업 용량 사용률 (파란
+                막대)
+              </li>
+              <li>
+                <strong className="text-emerald-500">Sub Policy</strong>: 외부 백업 용량 사용률
+                (초록 막대)
+              </li>
+            </ul>
+            <p className="text-xs text-rose-600 dark:text-rose-400 leading-relaxed font-bold">
+              💡 막대가 빨간색이면 백업 용량 한계에 도달! 설정에서 경로나 크기를 조정하세요.
+            </p>
+          </div>
         </Card>
       </div>
     </section>
