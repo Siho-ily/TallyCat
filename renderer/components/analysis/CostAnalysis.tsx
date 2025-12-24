@@ -17,6 +17,16 @@ interface CostAnalysisProps {
 }
 
 const COST_COLORS = ['#fbbf24', '#f87171']; // Amber for Purchase, Rose for Spending
+const CATEGORY_COLORS = [
+  '#60a5fa',
+  '#34d399',
+  '#f87171',
+  '#fbbf24',
+  '#a78bfa',
+  '#f472b6',
+  '#2dd4bf',
+  '#fb923c'
+];
 
 interface HierarchicalRow {
   id: string;
@@ -115,6 +125,39 @@ export default function CostAnalysis({
     };
   }, [records, prevRange]);
 
+  // CATEGORY DATA FOR CHARTS
+  const purchaseCategoryChartData = useMemo(() => {
+    const data: { name: string; value: number }[] = [];
+    const catMap = new Map<string, number>();
+
+    currentPeriodSummary.records
+      .filter(r => r.type === 'purchase')
+      .forEach(r => {
+        const cat = categories.find(c => c.id === r.category_id);
+        const name = cat ? cat.name : '미지정';
+        catMap.set(name, (catMap.get(name) || 0) + r.amount);
+      });
+
+    catMap.forEach((value, name) => data.push({ name, value }));
+    return data.sort((a, b) => b.value - a.value);
+  }, [currentPeriodSummary, categories]);
+
+  const spendingCategoryChartData = useMemo(() => {
+    const data: { name: string; value: number }[] = [];
+    const catMap = new Map<string, number>();
+
+    currentPeriodSummary.records
+      .filter(r => r.type === 'spending')
+      .forEach(r => {
+        const cat = categories.find(c => c.id === r.category_id);
+        const name = cat ? cat.name : '미지정';
+        catMap.set(name, (catMap.get(name) || 0) + r.amount);
+      });
+
+    catMap.forEach((value, name) => data.push({ name, value }));
+    return data.sort((a, b) => b.value - a.value);
+  }, [currentPeriodSummary, categories]);
+
   // Hierarchical Table Data Construction
   const tableData = useMemo(() => {
     const rows: HierarchicalRow[] = [];
@@ -210,45 +253,134 @@ export default function CostAnalysis({
 
   return (
     <div className="space-y-8">
-      {/* Top Chart */}
-      <Card title={`${period === 'week' ? '주간' : '월간'} 비용 비중 분석`} icon={null}>
-        <div className="h-[350px] w-full max-w-2xl mx-auto relative">
-          {costPieData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={costPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={80}
-                    outerRadius={130}
-                    paddingAngle={8}
-                    dataKey="value">
-                    {costPieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COST_COLORS[index % COST_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Center Labels */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none translate-y-[-10px]">
-                <span className="text-[10px] font-black text-gray-400 tracking-widest uppercase">
-                  총비용
-                </span>
-                <span className="text-2xl font-black text-rose-500">
-                  {currentPeriodSummary.total.toLocaleString()}
-                </span>
+      {/* Top Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 1. Main Cost Overview */}
+        <Card title="비용 비중 (매입 vs 지출)" icon={null}>
+          <div className="h-[280px] w-full relative">
+            {costPieData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={costPieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={65}
+                      outerRadius={95}
+                      paddingAngle={8}
+                      dataKey="value">
+                      {costPieData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COST_COLORS[index % COST_COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none translate-y-[-10px]">
+                  <span className="text-[10px] font-black text-gray-400 tracking-widest uppercase">
+                    총비용
+                  </span>
+                  <span className="text-xl font-black text-rose-500">
+                    {currentPeriodSummary.total.toLocaleString()}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm italic font-bold">
+                데이터가 없습니다.
               </div>
-            </>
-          ) : (
-            <div className="h-full flex items-center justify-center text-gray-400 text-sm italic font-bold">
-              {period === 'week' ? '이번 주' : '이번 달'} 등록된 비용 내역이 없습니다.
-            </div>
-          )}
-        </div>
-      </Card>
+            )}
+          </div>
+        </Card>
+
+        {/* 2. Purchase Category Breakdown */}
+        <Card title="매입 카테고리 비중" icon={null}>
+          <div className="h-[280px] w-full relative">
+            {purchaseCategoryChartData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={purchaseCategoryChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={65}
+                      outerRadius={95}
+                      paddingAngle={5}
+                      dataKey="value">
+                      {purchaseCategoryChartData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none translate-y-[-10px]">
+                  <span className="text-[10px] font-black text-gray-400 tracking-widest uppercase">
+                    매입합계
+                  </span>
+                  <span className="text-xl font-black text-amber-500">
+                    {currentPeriodSummary.purchase.toLocaleString()}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm italic font-bold">
+                매입 데이터가 없습니다.
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* 3. Spending Category Breakdown */}
+        <Card title="지출 카테고리 비중" icon={null}>
+          <div className="h-[280px] w-full relative">
+            {spendingCategoryChartData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={spendingCategoryChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={65}
+                      outerRadius={95}
+                      paddingAngle={5}
+                      dataKey="value">
+                      {spendingCategoryChartData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none translate-y-[-10px]">
+                  <span className="text-[10px] font-black text-gray-400 tracking-widest uppercase">
+                    지출합계
+                  </span>
+                  <span className="text-xl font-black text-rose-600">
+                    {currentPeriodSummary.spending.toLocaleString()}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 text-sm italic font-bold">
+                지출 데이터가 없습니다.
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
 
       {/* Detail Table */}
       <Card title={`${period === 'week' ? '주간' : '월간'} 비용 리포트 상세`} icon={null}>
