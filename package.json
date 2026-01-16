@@ -1,0 +1,51 @@
+{
+  "name": "tallycat",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npm run dev -w web & npm run dev -w electron-main",
+    "build": "npm run build -w web && npm run build -w electron-main",
+    "dist": "npm run build && npm run dist -w electron-main",
+    "dist:mac": "npm run build && npm run dist -w electron-main -- --mac",
+    "dist:win": "npm run build && npm run dist -w electron-main -- --win",
+    "dist:linux": "npm run build && npm run dist -w electron-main -- --linux",
+    "dist:all": "npm run build && npm run dist -w electron-main -- -mwl",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Siho-ily/TallyCat.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Siho-ily/TallyCat/issues"
+  },
+  "homepage": "https://github.com/Siho-ily/TallyCat#readme",
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.2",
+    "autoprefixer": "^10.4.23",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.4.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "motion": "^12.26.2",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwind-merge": "^3.4.0"
+  }
+}
