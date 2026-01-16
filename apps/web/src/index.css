@@ -1,7 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Font Family */
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-accent: 'Outfit', sans-serif;
+
+  /* Font Sizes */
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.25rem;
+  --fs-2xl: 1.5rem;
+
+  /* App Font Size Modes */
+  --app-fs-small: 0.9em;
+  --app-fs-medium: 1em;
+  --app-fs-large: 1.1em;
+
+  /* Colors (HSL) - Light Mode Default */
+  --primary: 220 100% 60%;
+  --primary-foreground: 0 0% 100%;
+
+  --background: 220 33% 98%;
+  --foreground: 220 40% 10%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 220 40% 10%;
+
+  --muted: 220 10% 90%;
+  --muted-foreground: 220 10% 40%;
+
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+
+  --accent: 220 100% 60%;
+  --accent-foreground: 0 0% 100%;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-blur: 12px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark {
+  --background: 224 71% 4%;
+  --foreground: 213 31% 91%;
+
+  --card: 224 71% 4%;
+  --card-foreground: 213 31% 91%;
+
+  --muted: 223 47% 11%;
+  --muted-foreground: 215 20% 65%;
+
+  --border: 216 34% 17%;
+  --input: 216 34% 17%;
+
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.05);
+}
+
+/* App Font Size Application */
+html[data-font-size="small"] {
+  font-size: var(--app-fs-small);
+}
+
+html[data-font-size="medium"] {
+  font-size: var(--app-fs-medium);
+}
+
+html[data-font-size="large"] {
+  font-size: var(--app-fs-large);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  /* Avoid body scroll, use container scroll */
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-accent);
+  font-weight: 600;
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
 }
